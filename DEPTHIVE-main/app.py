@@ -370,6 +370,96 @@ def risk_analysis(df):
         records.append({"Student ID": str(r.get("student_id", "")), "Department": r.get("department", "Unspecified"), "Year": year if year else "Not set", "CGPA": round(cgpa, 2) if pd.notna(cgpa) else None, "Attendance %": round(attendance, 1) if pd.notna(attendance) else None, "Active Backlogs": int(backlogs) if pd.notna(backlogs) else None, "Risk Score": score, "Risk Level": level, "Risk Factors": "; ".join(factors) if factors else "No configured risk trigger detected"})
     return pd.DataFrame(records)
 
+
+def train_future_risk_model(df):
+    """Train only on historical, explicitly labelled outcomes; never invent labels."""
+    data = normalize_columns(df)
+    label_candidates = {
+        "future_risk", "risk_outcome", "academic_outcome", "next_semester_outcome",
+        "failed_next_semester", "semester_result", "outcome", "at_risk_next_semester",
+        "next_semester_status", "promotion_status"
+    }
+    label_col = next((c for c in data.columns if norm(c) in label_candidates), None)
+    if label_col is None:
+        return None, None, "No historical outcome label was found. Add a column such as `next_semester_outcome` (for example: At Risk / Not At Risk) to train and evaluate an ML model. Current CGPA/attendance alone cannot validate future predictions."
+
+    feature_cols = [c for c in ["cgpa", "attendance", "backlogs", "year"] if c in data.columns]
+    for col in ["cgpa", "attendance", "backlogs", "year"]:
+        if col not in data.columns:
+            data[col] = pd.NA
+    feature_cols = ["cgpa", "attendance", "backlogs", "year"]
+    for col in feature_cols:
+        data[col] = numeric(data, col)
+    labels = data[label_col].astype(str).str.strip()
+    valid = labels.notna() & ~labels.str.lower().isin(["", "nan", "none", "unknown", "na", "n/a"])
+    model_data = data.loc[valid, feature_cols].copy()
+    y = labels.loc[valid]
+    if len(model_data) < 20 or y.nunique() < 2 or y.value_counts().min() < 3:
+        return None, None, f"Not enough labelled history to train reliably ({len(model_data)} labelled rows found). Add at least 20 labelled past records and multiple examples for each outcome."
+    try:
+        from sklearn.ensemble import RandomForestClassifier
+        from sklearn.impute import SimpleImputer
+        from sklearn.pipeline import make_pipeline
+        from sklearn.model_selection import train_test_split
+        from sklearn.metrics import accuracy_score
+        X_train, X_test, y_train, y_test = train_test_split(
+            model_data, y, test_size=0.25, random_state=42, stratify=y
+        )
+        model = make_pipeline(
+            SimpleImputer(strategy="median", keep_empty_features=True),
+            RandomForestClassifier(n_estimators=200, random_state=42, class_weight="balanced")
+        )
+        model.fit(X_train, y_train)
+        accuracy = accuracy_score(y_test, model.predict(X_test))
+        current = data[feature_cols].copy()
+        predictions = model.predict(current)
+        probabilities = model.predict_proba(current).max(axis=1) * 100
+        result = data.copy()
+        result["ML Predicted Outcome"] = predictions
+        result["Model Confidence %"] = probabilities.round(1)
+        result["ML Prediction"] = "Experimental — validate before decisions"
+        return result, accuracy, f"Model trained on {len(model_data)} labelled historical records; held-out accuracy {accuracy:.1%}. This is an experimental estimate, not a guarantee."
+    except ImportError:
+        return None, None, "ML dependency missing. Add `scikit-learn` to requirements.txt and redeploy."
+    except Exception as exc:
+        return None, None, f"Could not train the model: {exc}"
+
+
+def simulate_action_impact(df):
+    """Transparent what-if simulation, not a causal or trained intervention-impact model."""
+    before = normalize_columns(df)
+    after = before.copy()
+    for col in ["cgpa", "attendance", "backlogs"]:
+        after[col] = numeric(after, col)
+    if "attendance" in after.columns:
+        after["attendance"] = (after["attendance"] + 10).clip(upper=100)
+    if "cgpa" in after.columns:
+        after["cgpa"] = (after["cgpa"] + 0.3).clip(upper=10)
+    if "backlogs" in after.columns:
+        after["backlogs"] = (after["backlogs"] - 1).clip(lower=0)
+    before_scores = risk_analysis(before)
+    after_scores = risk_analysis(after)
+    if before_scores.empty:
+        return pd.DataFrame(), {"students": 0, "improved": 0, "avg_reduction": 0}
+    compare = before_scores[["Student ID", "Department", "Year", "Risk Score", "Risk Level"]].copy()
+    compare = compare.rename(columns={"Risk Score": "Current Risk Score", "Risk Level": "Current Risk Level"})
+    compare["Scenario Risk Score"] = after_scores["Risk Score"].values
+    compare["Scenario Risk Level"] = after_scores["Risk Level"].values
+    compare["Score Reduction"] = compare["Current Risk Score"] - compare["Scenario Risk Score"]
+    compare["Suggested Action"] = before_scores["Risk Factors"].apply(
+        lambda factors: "; ".join(
+            ( ["Attendance support plan"] if "Attendance" in factors else [] ) +
+            ( ["Academic tutoring / CGPA improvement plan"] if "CGPA" in factors else [] ) +
+            ( ["Backlog-clearing mentoring"] if "backlog" in factors.lower() else [] )
+        ) or "Continue monitoring and verify student data"
+    )
+    summary = {
+        "students": len(compare),
+        "improved": int((compare["Score Reduction"] > 0).sum()),
+        "avg_reduction": round(float(compare["Score Reduction"].mean()), 1) if len(compare) else 0,
+    }
+    return compare, summary
+
 def placement_summary(df):
     data = normalize_columns(df)
     if "department" not in data.columns: return pd.DataFrame(), "Dataset needs a Department column."
@@ -1185,7 +1275,29 @@ elif page == "Student Risk Review":
         view=ra[ra["Risk Level"].isin(filt)].sort_values("Risk Score",ascending=False)
         st.dataframe(view, width="stretch", hide_index=True)
         st.download_button("Download risk review CSV", view.to_csv(index=False).encode("utf-8"), "depthive_student_risk_review.csv", "text/csv")
-        st.caption("Rules are transparent starter thresholds, not a clinically or statistically validated prediction model. Confirm records before taking action.")
+
+        st.markdown("### Future risk prediction (ML)")
+        st.caption("The model trains only when the uploaded roster contains real historical outcome labels. It will not fabricate future outcomes from current risk scores.")
+        model_df, model_accuracy, model_message = train_future_risk_model(combined_analysis_roster())
+        if model_df is None:
+            st.info(model_message)
+        else:
+            st.warning(model_message + " Do not use this alone for academic decisions; check data quality, fairness and performance over time.")
+            ml_cols = [c for c in ["student_id", "student_name", "department", "year", "cgpa", "attendance", "backlogs", "ML Predicted Outcome", "Model Confidence %", "ML Prediction"] if c in model_df.columns]
+            st.dataframe(model_df[ml_cols], width="stretch", hide_index=True)
+            st.download_button("Download ML predictions CSV", model_df[ml_cols].to_csv(index=False).encode("utf-8"), "depthive_future_risk_predictions.csv", "text/csv")
+
+        st.markdown("### Recommended actions & impact simulator")
+        st.write("Select a what-if scenario to estimate how risk scores could change if attendance improved by 10 percentage points, CGPA increased by 0.3, and one backlog was cleared. These are scenario calculations—not proven causal effects or trained impact predictions.")
+        impact_df, impact_summary = simulate_action_impact(combined_analysis_roster())
+        if not impact_df.empty:
+            m1, m2, m3 = st.columns(3)
+            m1.metric("Students simulated", impact_summary["students"])
+            m2.metric("Scores reduced in scenario", impact_summary["improved"])
+            m3.metric("Average score reduction", f"{impact_summary['avg_reduction']} points")
+            st.dataframe(impact_df.sort_values("Current Risk Score", ascending=False), width="stretch", hide_index=True)
+            st.download_button("Download action impact scenario CSV", impact_df.to_csv(index=False).encode("utf-8"), "depthive_action_impact_scenario.csv", "text/csv")
+        st.caption("Risk thresholds and simulated outcomes are decision-support signals only. Validate data with faculty and do not treat them as guaranteed outcomes.")
 
 elif page == "Department Intelligence":
     hero("DEPARTMENT ANALYTICS", "Department health & comparison", "Compare academic health separately from placement outcomes. The system does not blend unrelated years or treat missing data as poor performance.")
