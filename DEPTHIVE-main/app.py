@@ -119,8 +119,14 @@ if USE_POSTGRES:
     class PGCursor:
         def __init__(self, cursor): self.cursor = cursor
         def execute(self, sql, params=None):
+            # Convert SQLite-style placeholders only. When no parameters are
+            # supplied, call execute(sql) without an empty tuple so literal
+            # percent signs in SQL (for example LIKE 'Student%') are safe.
             sql = sql.replace("?", "%s")
-            self.cursor.execute(sql, params or ())
+            if params:
+                self.cursor.execute(sql, params)
+            else:
+                self.cursor.execute(sql)
             return self
         def fetchone(self):
             row = self.cursor.fetchone()
