@@ -89,6 +89,11 @@ hr{border-color:#e1ddcf!important}
 .account-chip{display:inline-block;background:#e4ebdc;border:1px solid #d2ddc9;color:#3f5b45;padding:.25rem .55rem;border-radius:999px;font-size:.72rem;font-weight:800;margin-top:.35rem}
 .stFileUploader small{font-weight:600!important}
 @media(max-width:900px){.block-container{padding:1rem}.hero{padding:1.2rem}.auth-left{padding:1rem .2rem}.auth-panel{padding:1.2rem;margin-top:.3rem}.auth-title{font-size:1.8rem}}
+
+/* Auth form surface: style Streamlit's real widgets instead of an empty split HTML wrapper. */
+[data-testid="stForm"]{background:rgba(255,253,247,.94);border:1px solid #e0dac9;border-radius:20px;padding:1rem 1.05rem;box-shadow:0 12px 35px rgba(57,66,45,.08)}
+[data-testid="stFormSubmitButton"] button{width:100%}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -221,6 +226,7 @@ init_db()
 # ---------- analytics ----------
 ALIASES = {
     "student_id": ["student_id", "student id", "enrollment_no", "enrollment number", "roll_no", "roll number", "id"],
+    "student_name": ["student_name", "student name", "full_name", "full name", "name", "student"],
     "department": ["department", "dept", "branch"],
     "year": ["academic_year", "year", "study_year", "year_of_study"],
     "cgpa": ["cgpa", "c.g.p.a", "overall_cgpa"],
@@ -440,7 +446,6 @@ if not user:
         with b: st.markdown('<div class="insight"><b>Department view</b><p>Compare academic health.</p></div>', unsafe_allow_html=True)
         with c: st.markdown('<div class="insight"><b>Year-aware risks</b><p>Relevant signals only.</p></div>', unsafe_allow_html=True)
     with right:
-        st.markdown('<div class="auth-panel">', unsafe_allow_html=True)
         st.markdown('<div class="eyebrow">YOUR CAMPUS, IN FOCUS</div><div class="auth-title">Welcome back.</div><div class="auth-subtitle">Sign in to your DEPTHIVE workspace, or create an account to get started.</div>', unsafe_allow_html=True)
         mode = st.radio("Choose an option", ["Sign in", "Create account"], horizontal=True, label_visibility="visible", key="auth_mode")
         st.caption("Students, Department / HOD, Faculty, Placement Cell and College Admin all use this same sign-in form. Your account role determines which workspace opens.")
@@ -448,7 +453,7 @@ if not user:
             with st.form("login", clear_on_submit=False):
                 email = st.text_input("Email address", placeholder="you@college.edu", autocomplete="email")
                 password = st.text_input("Password", type="password", placeholder="Enter your password", autocomplete="current-password")
-                submit = st.form_submit_button("Sign in →", use_container_width=True)
+                submit = st.form_submit_button("Sign in →", width="stretch")
             if submit:
                 found = authenticate(email, password)
                 if not found: st.error("Email or password is incorrect.")
@@ -470,7 +475,7 @@ if not user:
                     st.info("Department / HOD, Faculty and Placement Cell accounts require approval by the College Admin before sign-in is enabled.")
                 password = st.text_input("Password (minimum 10 characters)", type="password", placeholder="Create a strong password", autocomplete="new-password")
                 confirm = st.text_input("Confirm password", type="password", placeholder="Re-enter password", autocomplete="new-password")
-                submit = st.form_submit_button("Create account →", use_container_width=True)
+                submit = st.form_submit_button("Create account →", width="stretch")
             if submit:
                 needs_department = role in ["Faculty", "Department / HOD", "Placement Cell"]
                 if (not name.strip() or "@" not in email or len(password) < 10 or password != confirm
@@ -482,7 +487,6 @@ if not user:
                         st.success(msg)
                         if role != "Student": st.info("Staff roles stay locked until an approved administrator grants access.")
                     else: st.error(msg)
-        st.markdown('</div>', unsafe_allow_html=True)
     st.stop()
 
 # ---------- app shell ----------
@@ -504,7 +508,7 @@ with st.sidebar:
     with st.expander("Update profile photo", expanded=False):
         photo = st.file_uploader("Choose a profile picture", type=["png", "jpg", "jpeg", "webp"], key="profile_photo_upload", help="Use a clear square photo for the best result.")
         if photo is not None:
-            if st.button("Save profile picture", key="save_profile_photo", use_container_width=True):
+            if st.button("Save profile picture", key="save_profile_photo", width="stretch"):
                 try:
                     save_avatar(photo, user)
                     st.success("Profile picture updated.")
@@ -517,7 +521,7 @@ with st.sidebar:
         st.stop()
     common = ["Overview"]
     if user["role"] == "Student":
-        pages = common + ["My Profile & Progress", "My Documents", "My Risk & Recommendations", "DEPTHIVE Copilot"]
+        pages = common + ["My Profile & Progress", "My Documents", "My Risk & Recommendations", "Department Leaderboard", "DEPTHIVE Copilot"]
     elif user["role"] == "Faculty":
         pages = common + ["Academic Data Hub", "Student Risk Review", "DEPTHIVE Copilot"]
     elif user["role"] == "Department / HOD":
@@ -529,7 +533,7 @@ with st.sidebar:
     page = st.radio("WORKSPACE", pages, label_visibility="collapsed")
     st.markdown("---")
     st.caption("Prototype · Use authorized data only")
-    if st.button("Sign out", use_container_width=True):
+    if st.button("Sign out", width="stretch"):
         st.session_state.user = None; st.rerun()
 
 # upload records for analysis
@@ -628,7 +632,7 @@ if page == "Overview":
             st.markdown("### Latest verified placement snapshot")
             ps, err = placement_summary(placement_df)
             if err: st.warning(err)
-            elif not ps.empty: st.dataframe(ps, use_container_width=True, hide_index=True)
+            elif not ps.empty: st.dataframe(ps, width="stretch", hide_index=True)
         else:
             st.markdown('<div class="insight"><b>Placement data is separate</b><p>Placement and internship outcomes are uploaded by the Placement Cell / authorized department. They are not inferred from student self-reported data.</p></div>', unsafe_allow_html=True)
 
@@ -648,7 +652,7 @@ elif page == "My Profile & Progress":
             skills = st.text_area("Skills (text)", value=profile.get("skills") or "", placeholder="Python, SQL, communication…")
             projects = st.text_area("Projects / certifications (text)", value=profile.get("projects") or "", placeholder="Project title, your contribution, certification…")
         career_goal = st.text_area("Career goals / areas to improve", value=profile.get("career_goal") or "")
-        save = st.form_submit_button("Save profile", use_container_width=True)
+        save = st.form_submit_button("Save profile", width="stretch")
     if save:
         if not student_id.strip() or not dept.strip(): st.error("Student ID and department are required.")
         else:
@@ -673,7 +677,7 @@ elif page == "My Documents":
     mine = [u for u in list_uploads() if u["uploader_id"] == user["id"] and u["category"].startswith("Student document:")]
     st.markdown("### Your uploaded documents")
     if mine:
-        st.dataframe(pd.DataFrame([{ "File":x["file_name"], "Category":x["category"].replace("Student document: ",""), "Uploaded":x["uploaded_at"], "Notes":x["notes"]} for x in mine]), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame([{ "File":x["file_name"], "Category":x["category"].replace("Student document: ",""), "Uploaded":x["uploaded_at"], "Notes":x["notes"]} for x in mine]), width="stretch", hide_index=True)
     else: st.info("No documents uploaded yet.")
 
 elif page == "My Risk & Recommendations":
@@ -754,6 +758,124 @@ elif page == "My Risk & Recommendations":
 
         st.caption("Scope: this personal indicator currently uses CGPA and attendance only. Backlogs are not assessed here unless added to the student profile. This is a guidance prototype, not a validated prediction; verify values against official college records.")
 
+elif page == "Department Leaderboard":
+    hero(
+        "STUDENT PORTAL",
+        "Department performance leaderboard",
+        "View the department leaderboard using a weighted KPI score calculated from CGPA, attendance and available academic factors. The leaderboard displays only rank, student name and overall score."
+    )
+    profile = get_profile(user["id"]) or {}
+    department = str(profile.get("department") or user.get("department") or "").strip()
+    student_id = str(profile.get("student_id") or "").strip()
+    if not department:
+        st.warning("Complete My Profile & Progress and add your department before viewing a department comparison.")
+    else:
+        # Prefer the latest official roster. If one is not available, use saved student profiles
+        # and clearly label the leaderboard as provisional/self-reported.
+        roster = normalize_columns(academic_df) if academic_df is not None else None
+        use_official = bool(roster is not None and "student_id" in roster.columns and "cgpa" in roster.columns and "department" in roster.columns)
+        source_label = "Official department roster" if use_official else "Saved student profiles (self-reported; provisional)"
+        records = []
+        if use_official:
+            roster["student_id"] = roster["student_id"].astype(str).str.strip()
+            roster["department"] = roster["department"].astype(str).str.strip()
+            roster = roster[roster["department"].str.casefold() == department.casefold()].copy()
+            if "year" not in roster.columns:
+                roster["year"] = pd.NA
+            roster["year"] = numeric(roster, "year")
+            roster["cgpa"] = numeric(roster, "cgpa")
+            roster["attendance"] = numeric(roster, "attendance")
+            roster["backlogs"] = numeric(roster, "backlogs")
+            if "student_name" not in roster.columns:
+                roster["student_name"] = ""
+            # If the roster omits names, use names linked to student IDs in saved profiles.
+            with conn() as _c:
+                _name_rows = _c.execute("""SELECT u.full_name, sp.student_id FROM student_profiles sp
+                                            JOIN users u ON u.id=sp.user_id
+                                            WHERE sp.department=? AND COALESCE(sp.student_id,'')<>''""", (department,)).fetchall()
+            _name_map = {str(r["student_id"]).strip(): r["full_name"] for r in _name_rows}
+            roster["Student"] = roster.apply(lambda r: str(r.get("student_name") or "").strip() or _name_map.get(str(r["student_id"]).strip()) or ("Student " + str(r["student_id"])[-4:]), axis=1)
+            roster = roster[roster["student_id"].ne("") & roster["cgpa"].notna()].copy()
+            roster = roster.drop_duplicates(subset=["student_id"], keep="last")
+            for _, r in roster.iterrows():
+                records.append({"student_id": str(r["student_id"]).strip(), "Student": r["Student"], "Year": r.get("year"), "CGPA": r.get("cgpa"), "Attendance %": r.get("attendance"), "Backlogs": r.get("backlogs")})
+        else:
+            with conn() as _c:
+                _profile_rows = _c.execute("""SELECT u.full_name, u.academic_year AS user_year, sp.*
+                                               FROM student_profiles sp JOIN users u ON u.id=sp.user_id
+                                               WHERE lower(trim(COALESCE(sp.department,'')))=lower(trim(?))
+                                               AND u.role='Student'""", (department,)).fetchall()
+            for r in _profile_rows:
+                if r["cgpa"] is None or not str(r["student_id"] or "").strip():
+                    continue
+                records.append({"student_id": str(r["student_id"]).strip(), "Student": r["full_name"],
+                                "Year": r["academic_year"] or r["user_year"], "CGPA": pd.to_numeric(r["cgpa"], errors="coerce"),
+                                "Attendance %": pd.to_numeric(r["attendance"], errors="coerce"), "Backlogs": pd.NA})
+
+        board = pd.DataFrame(records)
+        if board.empty:
+            st.info("No comparable records found for this department yet. Ask the HOD to upload an academic roster containing Student ID, Department and CGPA, or have students complete their profiles.")
+        else:
+            board["Year"] = pd.to_numeric(board["Year"], errors="coerce")
+            current_year = int(profile.get("academic_year") or user.get("academic_year") or 0)
+            if board["Year"].notna().any():
+                year_options = ["Same academic year", "All years in department"]
+                year_mode = st.radio("Compare with", year_options, horizontal=True, index=0, key="leaderboard_year_mode")
+                if year_mode == "Same academic year" and current_year:
+                    board = board[board["Year"].eq(current_year)]
+            if board.empty:
+                st.info("No records match your selected year. Ask the HOD to check the roster or choose all years in the department.")
+            else:
+                board["CGPA"] = pd.to_numeric(board["CGPA"], errors="coerce")
+                board["Attendance %"] = pd.to_numeric(board["Attendance %"], errors="coerce")
+                board["Backlogs"] = pd.to_numeric(board["Backlogs"], errors="coerce")
+                # Weighted score: CGPA 75%, attendance 20%, backlogs 5% (when available).
+                # If an indicator is absent for a row, its weight is redistributed proportionally
+                # across the available indicators; no missing value is silently treated as zero.
+                def weighted_score(row):
+                    parts = []
+                    if pd.notna(row["CGPA"]): parts.append((75.0, max(0.0, min(10.0, float(row["CGPA"]))) * 10.0))
+                    if pd.notna(row["Attendance %"]): parts.append((20.0, max(0.0, min(100.0, float(row["Attendance %"])))) )
+                    if pd.notna(row["Backlogs"]): parts.append((5.0, max(0.0, 100.0 - min(5.0, max(0.0, float(row["Backlogs"]))) * 20.0)))
+                    total_weight = sum(w for w, _ in parts)
+                    return round(sum(w * value for w, value in parts) / total_weight, 2) if total_weight else pd.NA
+                board["Performance Score"] = board.apply(weighted_score, axis=1)
+                board = board[board["Performance Score"].notna()].copy()
+                board = board.sort_values(["Performance Score", "CGPA", "Attendance %"], ascending=[False, False, False], na_position="last").reset_index(drop=True)
+                board["Rank"] = board["Performance Score"].rank(method="min", ascending=False).astype(int)
+                # A single student should appear only once even if the roster had duplicate rows.
+                board = board.drop_duplicates(subset=["student_id"], keep="first")
+                board["Rank"] = board["Performance Score"].rank(method="min", ascending=False).astype(int)
+                me = board[board["student_id"].astype(str).str.strip().eq(student_id)] if student_id else pd.DataFrame()
+                st.caption(f"Data source: {source_label}. Department: {department}. Ranking is based on the records available to DEPTHIVE and is not an official university rank.")
+                if not me.empty:
+                    mine = me.iloc[0]
+                    m1, m2 = st.columns(2)
+                    m1.metric("Your department rank", f"#{int(mine['Rank'])} of {len(board)}")
+                    m2.metric("Your performance score", f"{float(mine['Performance Score']):.2f}/100")
+                else:
+                    st.warning("Your Student ID was not found in the comparison records. Check that your profile Student ID exactly matches the ID in the official roster, then ask your HOD to update the roster if needed.")
+                top = board.head(10).copy()
+                if not top.empty:
+                    st.markdown("#### 🏆 Top 10 students in your department")
+                    st.caption("Students are ordered by weighted performance score. Ties are broken by CGPA, then attendance.")
+                    chart = top.set_index("Student")["Performance Score"]
+                    st.bar_chart(chart, color="#66816a")
+
+                    top_view = top[["Rank", "Student", "Performance Score"]].copy()
+                    rank_badges = {1: "🥇 1", 2: "🥈 2", 3: "🥉 3"}
+                    top_view["Rank"] = top_view["Rank"].map(lambda r: rank_badges.get(int(r), f"#{int(r)}"))
+                    top_view["Performance Score"] = top_view["Performance Score"].map(lambda x: f"{float(x):.2f}/100")
+                    top_view = top_view.rename(columns={"Student": "Student Name", "Performance Score": "Score"})
+                    st.dataframe(top_view, width="stretch", hide_index=True)
+
+                with st.expander("View all ranked students", expanded=False):
+                    view = board[["Rank", "Student", "Performance Score"]].copy()
+                    view["Performance Score"] = view["Performance Score"].map(lambda x: f"{float(x):.2f}/100")
+                    view = view.rename(columns={"Student": "Student Name", "Performance Score": "Score"})
+                    st.dataframe(view, width="stretch", hide_index=True)
+                st.caption("Scores are a transparent comparison metric for this prototype, not a validated predictive model. Official academic records should be verified before decisions are made.")
+
 elif page == "Academic Data Hub":
     hero("COLLEGE DATA WORKSPACE", "Academic data hub", "Faculty / authorized department staff can drag and drop a roster. Use one row per student and clear column names so analysis can validate the data before scoring.")
     st.markdown("### 1 · Upload academic roster")
@@ -768,7 +890,7 @@ elif page == "Academic Data Hub":
         try:
             preview = pd.read_csv(uploaded) if uploaded.name.lower().endswith(".csv") else pd.read_excel(uploaded)
             st.markdown("**Preview**")
-            st.dataframe(preview.head(12), use_container_width=True, hide_index=True)
+            st.dataframe(preview.head(12), width="stretch", hide_index=True)
             q=data_quality(preview); a,b,c,d=st.columns(4); a.metric("Rows",q["rows"]); b.metric("Columns",q["columns"]); c.metric("Missing cells",q["missing"]); d.metric("Duplicate rows",q["duplicates"])
             normalized=normalize_columns(preview)
             if user["role"] in ["Faculty", "Department / HOD"] and user.get("department"):
@@ -782,7 +904,7 @@ elif page == "Academic Data Hub":
                     normalized = normalize_columns(preview)
             missing=[x for x in ["student_id","department","year"] if x not in normalized.columns and not (x=="department" and dept_override.strip())]
             if missing: st.error("Missing required fields: " + ", ".join(missing) + ". Fix column names or provide a department label.")
-            elif st.button("Validate and save academic roster", use_container_width=True):
+            elif st.button("Validate and save academic roster", width="stretch"):
                 if dept_override.strip() and "department" not in normalized.columns: preview["Department"] = dept_override.strip()
                 save_upload(uploaded, "Academic roster", user, department=dept_override.strip(), notes=notes)
                 st.success("Academic roster saved. It is now available to authorized department/admin analysis.")
@@ -790,7 +912,7 @@ elif page == "Academic Data Hub":
         except Exception as e: st.error(f"Could not read this file: {e}")
     st.markdown("### 2 · Latest saved academic uploads")
     rows=list_uploads("Academic roster", user.get("department") if user["role"]=="Department / HOD" else None)
-    if rows: st.dataframe(pd.DataFrame([{ "File":x["file_name"],"Department":x["department"],"Uploaded":x["uploaded_at"],"Notes":x["notes"]} for x in rows]), use_container_width=True, hide_index=True)
+    if rows: st.dataframe(pd.DataFrame([{ "File":x["file_name"],"Department":x["department"],"Uploaded":x["uploaded_at"],"Notes":x["notes"]} for x in rows]), width="stretch", hide_index=True)
     else: st.info("No academic roster has been saved yet.")
 
 elif page == "Student Submissions":
@@ -916,7 +1038,7 @@ elif page == "Student Submissions":
                                 "Uploaded": r.get("uploaded_at") or "Unknown",
                                 "Notes": r.get("notes") or ""
                             } for r in student["visible_uploads"]]),
-                            use_container_width=True,
+                            width="stretch",
                             hide_index=True
                         )
                         selected_label = st.selectbox(
@@ -966,7 +1088,7 @@ elif page == "Student Risk Review":
         st.markdown("### Students needing review")
         filt=st.multiselect("Filter risk level", ["High","Moderate","Low"], default=["High","Moderate"])
         view=ra[ra["Risk Level"].isin(filt)].sort_values("Risk Score",ascending=False)
-        st.dataframe(view, use_container_width=True, hide_index=True)
+        st.dataframe(view, width="stretch", hide_index=True)
         st.download_button("Download risk review CSV", view.to_csv(index=False).encode("utf-8"), "depthive_student_risk_review.csv", "text/csv")
         st.caption("Rules are transparent starter thresholds, not a clinically or statistically validated prediction model. Confirm records before taking action.")
 
@@ -986,7 +1108,7 @@ elif page == "Department Intelligence":
             with a: st.markdown("**Average CGPA by department**"); st.bar_chart(summary.set_index("Department")["Average CGPA"], color=["#66816a"])
             with b: st.markdown("**Average attendance by department**"); st.bar_chart(summary.set_index("Department")["Average Attendance %"], color=["#c5a15a"])
             ranked_summary=summary.sort_values("Average CGPA",ascending=False,na_position="last")
-            st.dataframe(ranked_summary,use_container_width=True,hide_index=True)
+            st.dataframe(ranked_summary,width="stretch",hide_index=True)
             if not ranked_summary.empty:
                 best_row=ranked_summary.dropna(subset=["Average CGPA"]).head(1)
                 if not best_row.empty:
@@ -1002,7 +1124,7 @@ elif page == "Department Intelligence":
             risk_sum=ra.groupby("Department").agg(Students=("Student ID","count"),High_Risk=("Risk Level",lambda x:int((x=="High").sum())),Moderate_Risk=("Risk Level",lambda x:int((x=="Moderate").sum()))).reset_index()
             risk_sum["High Risk %"]=(risk_sum["High_Risk"]/risk_sum["Students"].replace(0,pd.NA)*100).round(1)
             st.bar_chart(risk_sum.set_index("Department")[["High_Risk","Moderate_Risk"]], color=["#c4775b", "#c5a15a"])
-            st.dataframe(risk_sum.sort_values("High Risk %",ascending=False,na_position="last"),use_container_width=True,hide_index=True)
+            st.dataframe(risk_sum.sort_values("High Risk %",ascending=False,na_position="last"),width="stretch",hide_index=True)
             st.caption("Department health is presented as separate measures, not a single opaque score. Compare similar cohorts and ensure the roster is current.")
 
 elif page == "Placement & Internship Data":
@@ -1017,7 +1139,7 @@ elif page == "Placement & Internship Data":
     if uploaded:
         try:
             preview=pd.read_csv(uploaded) if uploaded.name.lower().endswith(".csv") else pd.read_excel(uploaded)
-            st.dataframe(preview.head(12),use_container_width=True,hide_index=True)
+            st.dataframe(preview.head(12),width="stretch",hide_index=True)
             nd=normalize_columns(preview)
             if user["role"] == "Placement Cell" and user.get("department"):
                 if "department" in nd.columns:
@@ -1030,14 +1152,14 @@ elif page == "Placement & Internship Data":
                     nd = normalize_columns(preview)
             if "student_id" not in nd.columns: st.error("Student_ID / Enrollment number column is required to prevent duplicate counting.")
             elif "department" not in nd.columns and not dept.strip(): st.error("Add a Department column or enter a department label.")
-            elif st.button("Validate and save official outcomes",use_container_width=True):
+            elif st.button("Validate and save official outcomes",width="stretch"):
                 if dept.strip() and "department" not in nd.columns: preview["Department"]=dept.strip()
                 save_upload(uploaded,"Placement outcomes",user,department=dept.strip(),notes=notes)
                 st.success("Official outcome file saved."); st.rerun()
         except Exception as e: st.error(f"Could not read this file: {e}")
     st.markdown("### Recent official uploads")
     rows=list_uploads("Placement outcomes",user.get("department") if user["role"]=="Department / HOD" else None)
-    if rows: st.dataframe(pd.DataFrame([{ "File":x["file_name"],"Department":x["department"],"Uploaded":x["uploaded_at"],"Notes":x["notes"]} for x in rows]),use_container_width=True,hide_index=True)
+    if rows: st.dataframe(pd.DataFrame([{ "File":x["file_name"],"Department":x["department"],"Uploaded":x["uploaded_at"],"Notes":x["notes"]} for x in rows]),width="stretch",hide_index=True)
     else: st.info("No official placement file has been uploaded.")
 
 elif page == "Placement Intelligence":
@@ -1062,14 +1184,14 @@ elif page == "Placement Intelligence":
                 p2.metric("Eligible students",int(ps["Eligible Students"].sum()))
                 p3.metric("Placed students",int(ps["Placed Students"].sum()))
                 st.info(narrative_health(placement_rate=float(top["Placement Rate %"])))
-            st.dataframe(ps,use_container_width=True,hide_index=True)
+            st.dataframe(ps,width="stretch",hide_index=True)
             st.download_button("Download placement summary CSV",ps.to_csv(index=False).encode("utf-8"),"depthive_placement_summary.csv","text/csv")
             st.caption("Placement rates are meaningful only if eligibility, placement status and graduating-batch coverage are consistently recorded.")
 
 elif page == "Data Quality & Audit":
     hero("GOVERNANCE", "Data quality & audit", "Review uploaded data sources and important workspace actions. Use the quality checks before interpreting any risk score or department ranking.")
     uploads=list_uploads()
-    if uploads: st.dataframe(pd.DataFrame([{ "File":u["file_name"],"Type":u["category"],"Department":u["department"],"Year":u["academic_year"],"Uploaded":u["uploaded_at"],"Notes":u["notes"]} for u in uploads]),use_container_width=True,hide_index=True)
+    if uploads: st.dataframe(pd.DataFrame([{ "File":u["file_name"],"Type":u["category"],"Department":u["department"],"Year":u["academic_year"],"Uploaded":u["uploaded_at"],"Notes":u["notes"]} for u in uploads]),width="stretch",hide_index=True)
     else: st.info("No uploads recorded.")
     with conn() as c:
         logs=c.execute("SELECT a.id,a.created_at,u.full_name AS actor_name,u.email AS actor_email,a.action,a.detail FROM audit_log a LEFT JOIN users u ON u.id=a.user_id ORDER BY a.id DESC LIMIT 200").fetchall()
@@ -1108,7 +1230,7 @@ elif page == "Data Quality & Audit":
             audit_view.append(item)
         audit_df=pd.DataFrame(audit_view)
         audit_df=audit_df.rename(columns={"created_at":"Date & time","actor_email":"Actor email","action":"Action","detail":"Details"})
-        st.dataframe(audit_df.drop(columns=["id"],errors="ignore"),use_container_width=True,hide_index=True)
+        st.dataframe(audit_df.drop(columns=["id"],errors="ignore"),width="stretch",hide_index=True)
     else:
         st.info("No audit events yet.")
 
@@ -1118,10 +1240,10 @@ elif page == "Access Approvals":
     if not pending: st.success("No staff accounts are waiting for approval.")
     else:
         st.markdown("### Pending staff requests")
-        st.dataframe(pd.DataFrame([dict(x) for x in pending]),use_container_width=True,hide_index=True)
+        st.dataframe(pd.DataFrame([dict(x) for x in pending]),width="stretch",hide_index=True)
         selected=st.selectbox("Select account to approve",[f"{x['id']} · {x['full_name']} · {x['role']} · {x['email']}" for x in pending])
         uid=int(selected.split(" · ")[0])
-        if st.button("Approve selected staff account",use_container_width=True):
+        if st.button("Approve selected staff account",width="stretch"):
             target=next((dict(x) for x in pending if int(x["id"])==uid),None)
             with conn() as c:
                 c.execute("UPDATE users SET approved=1 WHERE id=?",(uid,))
@@ -1139,14 +1261,14 @@ elif page == "Access Approvals":
         for row in history:
             item=dict(row); item["Approved by"]=approver_rows.get(item.pop("approved_by_user_id"),"Admin account")
             hist.append(item)
-        st.dataframe(pd.DataFrame(hist).rename(columns={"approved_at":"Approved at","approved_user_name":"Approved user","approved_user_email":"Email","approved_role":"Role","department":"Department"}),use_container_width=True,hide_index=True)
+        st.dataframe(pd.DataFrame(hist).rename(columns={"approved_at":"Approved at","approved_user_name":"Approved user","approved_user_email":"Email","approved_role":"Role","department":"Department"}),width="stretch",hide_index=True)
     else: st.info("No approvals have been recorded yet. Future approvals will appear here.")
 
 elif page == "DEPTHIVE Copilot":
     hero("ROLE-AWARE ASSISTANT", "DEPTHIVE Copilot", "Ask about the data and tools available in your current workspace. Responses respect the current role and clearly distinguish measured data from recommendations.")
     st.info("Copilot is currently a safe prototype assistant using configured rules and current workspace data. It is not yet a trained ML model and cannot reliably answer every possible question.")
     prompt=st.text_area("Ask DEPTHIVE Copilot", placeholder="Examples: How many students are high risk? Which department has the highest CGPA? How do I upload placement data?", height=110, key="copilot_question")
-    if st.button("Ask Copilot", use_container_width=True):
+    if st.button("Ask Copilot", width="stretch"):
         answer=copilot_reply(prompt,user,academic_df,placement_df)
         st.session_state["copilot_last_question"]=prompt
         st.session_state["copilot_last_answer"]=answer
