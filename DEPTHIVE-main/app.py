@@ -533,7 +533,14 @@ if not user:
                 name = st.text_input("Full name", placeholder="Your full name")
                 email = st.text_input("Email address", placeholder="you@college.edu", autocomplete="email")
                 role = st.selectbox("Account type", ["Student", "Faculty", "Department / HOD", "Placement Cell", "College Admin"])
-                dept = st.text_input("Department / Branch", placeholder="e.g. CSE-DS", help="Required for department staff so records can be scoped to the right department.")
+                branches = ["CSE", "DS", "IOT", "Cyber Security", "AIML", "AI", "IT", "AIDS"]
+                dept = st.selectbox(
+                    "Department / Branch",
+                    branches,
+                    index=None,
+                    placeholder="Choose your branch",
+                    help="Select your branch from the list. Branch labels are stored in a consistent format."
+                )
                 year = st.selectbox("Current year (students only)", [1,2,3,4], index=2) if role == "Student" else 0
                 if role == "Student":
                     st.info("Student accounts are activated immediately. Sign in with the email and password you create.")
@@ -547,8 +554,9 @@ if not user:
             if submit:
                 needs_department = role in ["Faculty", "Department / HOD", "Placement Cell"]
                 if (not name.strip() or "@" not in email or len(password) < 10 or password != confirm
-                        or (needs_department and not dept.strip())):
-                    st.error("Enter your name and a valid email, use at least 10 characters for the password, ensure both passwords match, and provide a department for staff roles.")
+                        or (needs_department and not dept)):
+
+                    st.error("Enter your name and a valid email, use at least 10 characters for the password, ensure both passwords match, and select a branch for staff roles.")
                 else:
                     ok, msg = register_user(name, email, password, role, dept, year)
                     if ok:
@@ -711,7 +719,16 @@ elif page == "My Profile & Progress":
         c1,c2 = st.columns(2)
         with c1:
             student_id = st.text_input("Student ID / Enrollment number", value=profile.get("student_id") or "")
-            dept = st.text_input("Department / Branch", value=profile.get("department") or user.get("department") or "")
+            branches = ["CSE", "DS", "IOT", "Cyber Security", "AIML", "AI", "IT", "AIDS"]
+            current_dept = (profile.get("department") or user.get("department") or "").strip()
+            # Match existing saved values without treating letter case as significant.
+            branch_index = next((i for i, branch in enumerate(branches) if branch.casefold() == current_dept.casefold()), None)
+            dept = st.selectbox(
+                "Department / Branch",
+                branches,
+                index=branch_index,
+                placeholder="Choose your branch"
+            )
             year = st.selectbox("Academic year", [1,2,3,4], index=max(0, min(3, int(profile.get("academic_year") or user.get("academic_year") or 1)-1)))
             semester = st.selectbox("Current semester", ["1","2","3","4","5","6","7","8"], index=0 if not profile.get("semester") else int(profile["semester"])-1)
         with c2:
@@ -722,9 +739,9 @@ elif page == "My Profile & Progress":
         career_goal = st.text_area("Career goals / areas to improve", value=profile.get("career_goal") or "")
         save = st.form_submit_button("Save profile", width="stretch")
     if save:
-        if not student_id.strip() or not dept.strip(): st.error("Student ID and department are required.")
+        if not student_id.strip() or not dept: st.error("Student ID and branch are required.")
         else:
-            save_profile(user["id"], {"student_id":student_id.strip(),"department":dept.strip(),"academic_year":year,"semester":semester,"cgpa":cgpa if cgpa else None,"attendance":attendance if attendance else None,"skills":skills,"projects":projects,"career_goal":career_goal})
+            save_profile(user["id"], {"student_id":student_id.strip(),"department":dept,"academic_year":year,"semester":semester,"cgpa":cgpa if cgpa else None,"attendance":attendance if attendance else None,"skills":skills,"projects":projects,"career_goal":career_goal})
             log_action(user["id"], "PROFILE_UPDATE", f"Student profile updated: {student_id}")
             st.success("Profile saved.")
     st.caption("Profile values are student-submitted. Official college records should be verified separately before institutional reporting.")
