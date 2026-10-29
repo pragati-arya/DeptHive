@@ -1,4 +1,4 @@
-import os, io, sqlite3, hashlib, secrets, html
+import os, io, sqlite3, hashlib, secrets, html, re
 from datetime import datetime
 from pathlib import Path
 import pandas as pd
@@ -98,36 +98,104 @@ hr{border-color:#e1ddcf!important}
 """, unsafe_allow_html=True)
 
 # ---------- persistence ----------
-def conn():
-    c = sqlite3.connect(DB_PATH, check_same_thread=False)
-    c.row_factory = sqlite3.Row
-    return c
+# Cloud uses Supabase PostgreSQL when [connections.postgresql].url is set in Streamlit Secrets.
+# Local development continues to use SQLite.
+USE_POSTGRES = bool(st.secrets.get("connections", {}).get("postgresql", {}).get("url", ""))
+
+if USE_POSTGRES:
+    try:
+        import psycopg2
+        from psycopg2.extras import RealDictCursor
+    except ImportError as exc:
+        st.error("Missing psycopg2-binary. Add it to requirements.txt and redeploy.")
+        st.stop()
+
+    class HybridRow(dict):
+        def __getitem__(self, key):
+            if isinstance(key, int):
+                return list(self.values())[key]
+            return super().__getitem__(key)
+
+    class PGCursor:
+        def __init__(self, cursor): self.cursor = cursor
+        def execute(self, sql, params=None):
+            sql = sql.replace("?", "%s")
+            self.cursor.execute(sql, params or ())
+            return self
+        def fetchone(self):
+            row = self.cursor.fetchone()
+            return HybridRow(row) if row is not None else None
+        def fetchall(self):
+            return [HybridRow(r) for r in self.cursor.fetchall()]
+
+    class PGConnection:
+        def __init__(self):
+            url = st.secrets["connections"]["postgresql"]["url"]
+            self.raw = psycopg2.connect(url, sslmode="require", cursor_factory=RealDictCursor)
+        def execute(self, sql, params=None):
+            cur = PGCursor(self.raw.cursor())
+            return cur.execute(sql, params)
+        def __enter__(self): return self
+        def __exit__(self, typ, value, tb):
+            if typ is None: self.raw.commit()
+            else: self.raw.rollback()
+            self.raw.close()
+        def close(self): self.raw.close()
+
+    def conn(): return PGConnection()
+    DB_INTEGRITY_ERRORS = (psycopg2.IntegrityError,)
+else:
+    def conn():
+        c = sqlite3.connect(DB_PATH, check_same_thread=False)
+        c.row_factory = sqlite3.Row
+        return c
+    DB_INTEGRITY_ERRORS = (sqlite3.IntegrityError,)
 
 def init_db():
     with conn() as c:
-        c.execute("""CREATE TABLE IF NOT EXISTS users(
-            id INTEGER PRIMARY KEY AUTOINCREMENT, full_name TEXT NOT NULL, email TEXT UNIQUE NOT NULL,
-            salt TEXT NOT NULL, password_hash TEXT NOT NULL, role TEXT NOT NULL,
-            department TEXT DEFAULT '', academic_year INTEGER DEFAULT 0, approved INTEGER DEFAULT 1,
-            created_at TEXT NOT NULL, avatar_path TEXT DEFAULT '')""")
-        c.execute("""CREATE TABLE IF NOT EXISTS student_profiles(
-            user_id INTEGER PRIMARY KEY, student_id TEXT, department TEXT, academic_year INTEGER,
-            semester TEXT, cgpa REAL, attendance REAL, skills TEXT, projects TEXT, career_goal TEXT,
-            updated_at TEXT, FOREIGN KEY(user_id) REFERENCES users(id))""")
-        c.execute("""CREATE TABLE IF NOT EXISTS uploads(
-            id INTEGER PRIMARY KEY AUTOINCREMENT, uploader_id INTEGER, category TEXT, department TEXT,
-            academic_year INTEGER, file_name TEXT, stored_path TEXT, uploaded_at TEXT, notes TEXT)""")
-        c.execute("""CREATE TABLE IF NOT EXISTS audit_log(
-            id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, action TEXT, detail TEXT, created_at TEXT)""")
-        c.execute("""CREATE TABLE IF NOT EXISTS approval_history(
-            id INTEGER PRIMARY KEY AUTOINCREMENT, approved_user_id INTEGER NOT NULL,
-            approved_by_user_id INTEGER NOT NULL, approved_user_name TEXT NOT NULL,
-            approved_user_email TEXT NOT NULL, approved_role TEXT NOT NULL,
-            department TEXT DEFAULT '', approved_at TEXT NOT NULL)""")
-        # Safe migration for databases created before profile photos were supported.
-        user_columns = {row[1] for row in c.execute("PRAGMA table_info(users)").fetchall()}
-        if "avatar_path" not in user_columns:
-            c.execute("ALTER TABLE users ADD COLUMN avatar_path TEXT DEFAULT ''")
+        if USE_POSTGRES:
+            c.execute("""CREATE TABLE IF NOT EXISTS users(
+                id BIGSERIAL PRIMARY KEY, full_name TEXT NOT NULL, email TEXT UNIQUE NOT NULL,
+                salt TEXT NOT NULL, password_hash TEXT NOT NULL, role TEXT NOT NULL,
+                department TEXT DEFAULT '', academic_year INTEGER DEFAULT 0, approved INTEGER DEFAULT 1,
+                created_at TEXT NOT NULL, avatar_path TEXT DEFAULT '')""")
+            c.execute("""CREATE TABLE IF NOT EXISTS student_profiles(
+                user_id BIGINT PRIMARY KEY, student_id TEXT, department TEXT, academic_year INTEGER,
+                semester TEXT, cgpa DOUBLE PRECISION, attendance DOUBLE PRECISION, skills TEXT, projects TEXT, career_goal TEXT,
+                updated_at TEXT, FOREIGN KEY(user_id) REFERENCES users(id))""")
+            c.execute("""CREATE TABLE IF NOT EXISTS uploads(
+                id BIGSERIAL PRIMARY KEY, uploader_id BIGINT, category TEXT, department TEXT,
+                academic_year INTEGER, file_name TEXT, stored_path TEXT, uploaded_at TEXT, notes TEXT)""")
+            c.execute("""CREATE TABLE IF NOT EXISTS audit_log(
+                id BIGSERIAL PRIMARY KEY, user_id BIGINT, action TEXT, detail TEXT, created_at TEXT)""")
+            c.execute("""CREATE TABLE IF NOT EXISTS approval_history(
+                id BIGSERIAL PRIMARY KEY, approved_user_id BIGINT NOT NULL,
+                approved_by_user_id BIGINT NOT NULL, approved_user_name TEXT NOT NULL,
+                approved_user_email TEXT NOT NULL, approved_role TEXT NOT NULL,
+                department TEXT DEFAULT '', approved_at TEXT NOT NULL)""")
+        else:
+            c.execute("""CREATE TABLE IF NOT EXISTS users(
+                id INTEGER PRIMARY KEY AUTOINCREMENT, full_name TEXT NOT NULL, email TEXT UNIQUE NOT NULL,
+                salt TEXT NOT NULL, password_hash TEXT NOT NULL, role TEXT NOT NULL,
+                department TEXT DEFAULT '', academic_year INTEGER DEFAULT 0, approved INTEGER DEFAULT 1,
+                created_at TEXT NOT NULL, avatar_path TEXT DEFAULT '')""")
+            c.execute("""CREATE TABLE IF NOT EXISTS student_profiles(
+                user_id INTEGER PRIMARY KEY, student_id TEXT, department TEXT, academic_year INTEGER,
+                semester TEXT, cgpa REAL, attendance REAL, skills TEXT, projects TEXT, career_goal TEXT,
+                updated_at TEXT, FOREIGN KEY(user_id) REFERENCES users(id))""")
+            c.execute("""CREATE TABLE IF NOT EXISTS uploads(
+                id INTEGER PRIMARY KEY AUTOINCREMENT, uploader_id INTEGER, category TEXT, department TEXT,
+                academic_year INTEGER, file_name TEXT, stored_path TEXT, uploaded_at TEXT, notes TEXT)""")
+            c.execute("""CREATE TABLE IF NOT EXISTS audit_log(
+                id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, action TEXT, detail TEXT, created_at TEXT)""")
+            c.execute("""CREATE TABLE IF NOT EXISTS approval_history(
+                id INTEGER PRIMARY KEY AUTOINCREMENT, approved_user_id INTEGER NOT NULL,
+                approved_by_user_id INTEGER NOT NULL, approved_user_name TEXT NOT NULL,
+                approved_user_email TEXT NOT NULL, approved_role TEXT NOT NULL,
+                department TEXT DEFAULT '', approved_at TEXT NOT NULL)""")
+            user_columns = {row[1] for row in c.execute("PRAGMA table_info(users)").fetchall()}
+            if "avatar_path" not in user_columns:
+                c.execute("ALTER TABLE users ADD COLUMN avatar_path TEXT DEFAULT ''")
 
 def password_hash(password, salt):
     return hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 180000).hex()
@@ -148,7 +216,7 @@ def register_user(name, email, password, role, department="", academic_year=0):
             c.execute("INSERT INTO users(full_name,email,salt,password_hash,role,department,academic_year,approved,created_at) VALUES(?,?,?,?,?,?,?,?,?)",
                       (name.strip(), email.strip().lower(), salt, password_hash(password, salt), role, department.strip(), int(academic_year or 0), approved, datetime.now().isoformat(timespec="seconds")))
         return True, "Account created. Staff accounts require approval by an administrator."
-    except sqlite3.IntegrityError:
+    except DB_INTEGRITY_ERRORS:
         return False, "An account with this email already exists."
 
 def authenticate(email, password):

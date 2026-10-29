@@ -1,4 +1,7 @@
-streamlit>=1.40
-pandas>=2.0
-openpyxl>=3.1
-plotly>=5.20
+requirements.txt
+streamlit
+pandas
+openpyxl
+xlrd
+Pillow
+psycopg2-binary
