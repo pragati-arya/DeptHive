@@ -214,7 +214,7 @@ def register_user(name, email, password, role, department="", academic_year=0):
     try:
         with conn() as c:
             c.execute("INSERT INTO users(full_name,email,salt,password_hash,role,department,academic_year,approved,created_at) VALUES(?,?,?,?,?,?,?,?,?)",
-                      (name.strip(), email.strip().lower(), salt, password_hash(password, salt), role, department.strip(), int(academic_year or 0), approved, datetime.now().isoformat(timespec="seconds")))
+                      (name.strip(), email.strip().lower(), salt, password_hash(password, salt), role, (department or "").strip(), int(academic_year or 0), approved, datetime.now().isoformat(timespec="seconds")))
         return True, "Account created. Staff accounts require approval by an administrator."
     except DB_INTEGRITY_ERRORS:
         return False, "An account with this email already exists."
@@ -534,14 +534,18 @@ if not user:
                 email = st.text_input("Email address", placeholder="you@college.edu", autocomplete="email")
                 role = st.selectbox("Account type", ["Student", "Faculty", "Department / HOD", "Placement Cell", "College Admin"])
                 branches = ["CSE", "DS", "IOT", "Cyber Security", "AIML", "AI", "IT", "AIDS"]
-                dept = st.selectbox(
-                    "Department / Branch",
-                    branches,
-                    index=None,
-                    placeholder="Choose your branch",
-                    help="Select your branch from the list. Branch labels are stored in a consistent format."
-                )
-                year = st.selectbox("Current year (students only)", [1,2,3,4], index=2) if role == "Student" else 0
+                # College Admin does not need a branch or academic year.
+                if role == "College Admin":
+                    dept = ""
+                else:
+                    dept = st.selectbox(
+                        "Department / Branch",
+                        branches,
+                        index=None,
+                        placeholder="Choose your branch",
+                        help="Select your branch from the list. Branch labels are stored in a consistent format."
+                    )
+                year = st.selectbox("Current year", [1, 2, 3, 4], index=None, placeholder="Select your year") if role == "Student" else 0
                 if role == "Student":
                     st.info("Student accounts are activated immediately. Sign in with the email and password you create.")
                 elif role == "College Admin":
@@ -552,11 +556,11 @@ if not user:
                 confirm = st.text_input("Confirm password", type="password", placeholder="Re-enter password", autocomplete="new-password")
                 submit = st.form_submit_button("Create account →", width="stretch")
             if submit:
-                needs_department = role in ["Faculty", "Department / HOD", "Placement Cell"]
+                needs_department = role in ["Student", "Faculty", "Department / HOD", "Placement Cell"]
+                needs_year = role == "Student"
                 if (not name.strip() or "@" not in email or len(password) < 10 or password != confirm
-                        or (needs_department and not dept)):
-
-                    st.error("Enter your name and a valid email, use at least 10 characters for the password, ensure both passwords match, and select a branch for staff roles.")
+                        or (needs_department and not dept) or (needs_year and not year)):
+                    st.error("Enter your name and a valid email, use at least 10 characters for the password, ensure both passwords match, and select the required branch/year.")
                 else:
                     ok, msg = register_user(name, email, password, role, dept, year)
                     if ok:
