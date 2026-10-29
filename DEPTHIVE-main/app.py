@@ -1,4 +1,5 @@
 import streamlit as st
+from datetime import datetime
 
 import pandas as pd
 
@@ -242,6 +243,125 @@ div[data-testid="stTable"] thead tr th{background:#edf2ff!important;color:#25365
 div[data-testid="stTable"] tbody tr td{background:#fff!important;color:#24314f!important;border-bottom:1px solid #edf0f7!important}
 div[data-testid="stTable"] tbody tr:nth-child(even) td{background:#f8f9fe!important}
 
+
+/* Soft cloud-watermark atmosphere across every DEPTHIVE page */
+.stApp{
+  background:
+    radial-gradient(ellipse at 8% 8%, rgba(184,211,255,.30) 0, rgba(184,211,255,0) 28%),
+    radial-gradient(ellipse at 92% 15%, rgba(207,192,255,.26) 0, rgba(207,192,255,0) 25%),
+    radial-gradient(ellipse at 78% 76%, rgba(255,220,205,.23) 0, rgba(255,220,205,0) 28%),
+    radial-gradient(ellipse at 12% 90%, rgba(187,224,255,.24) 0, rgba(187,224,255,0) 25%),
+    linear-gradient(135deg,#fbfcff 0%,#f5f7ff 47%,#fff9f3 100%) !important;
+  background-attachment:fixed!important;
+}
+[data-testid="stAppViewContainer"]{position:relative;isolation:isolate}
+[data-testid="stMain"]{position:relative;z-index:1}
+[data-testid="stAppViewContainer"]::before{
+  content:"";position:fixed;inset:72px 0 0 250px;z-index:-1;pointer-events:none;opacity:.58;
+  background:
+    radial-gradient(ellipse 115px 45px at 8% 16%,rgba(177,207,255,.23) 0 60%,transparent 72%),
+    radial-gradient(ellipse 155px 58px at 12% 14%,rgba(177,207,255,.18) 0 58%,transparent 72%),
+    radial-gradient(ellipse 110px 40px at 90% 20%,rgba(195,183,255,.22) 0 58%,transparent 74%),
+    radial-gradient(ellipse 170px 58px at 94% 18%,rgba(195,183,255,.17) 0 60%,transparent 74%),
+    radial-gradient(ellipse 150px 50px at 83% 83%,rgba(255,213,196,.20) 0 58%,transparent 74%),
+    radial-gradient(ellipse 100px 36px at 78% 86%,rgba(255,213,196,.16) 0 58%,transparent 74%),
+    radial-gradient(ellipse 145px 48px at 5% 77%,rgba(170,215,255,.19) 0 58%,transparent 74%);
+}
+[data-testid="stSidebar"]{
+  background:
+    radial-gradient(ellipse at 8% 8%,rgba(184,211,255,.24),transparent 38%),
+    radial-gradient(ellipse at 90% 84%,rgba(207,192,255,.20),transparent 35%),
+    linear-gradient(180deg,#fffefa 0%,#f4f6ff 100%) !important;
+  position:relative;overflow:hidden;
+}
+[data-testid="stSidebar"]::after{
+  content:"";position:absolute;left:-48px;bottom:-28px;width:280px;height:180px;pointer-events:none;opacity:.6;
+  background:
+    radial-gradient(ellipse 100px 40px at 24% 55%,rgba(164,207,255,.28) 0 58%,transparent 73%),
+    radial-gradient(ellipse 130px 48px at 52% 72%,rgba(164,207,255,.22) 0 58%,transparent 73%),
+    radial-gradient(ellipse 105px 38px at 76% 48%,rgba(199,185,255,.22) 0 58%,transparent 73%);
+}
+.reference-hero,.page-hero{
+  background:
+    radial-gradient(ellipse at 92% 22%,rgba(188,208,255,.40),transparent 32%),
+    radial-gradient(ellipse at 78% 100%,rgba(222,207,255,.30),transparent 30%),
+    linear-gradient(105deg,rgba(255,255,255,.92),rgba(246,248,255,.82) 55%,rgba(239,242,255,.79)) !important;
+}
+.workspace-section,.module-banner,.module-mini-card,.reference-metric,.reference-insight,.reference-feature,.metric-tile,.module-card{
+  backdrop-filter:blur(8px);
+}
+.reference-hero::before,.page-hero::before{
+  content:"✦  ･  ✧";position:absolute;right:24%;top:18%;font-size:1.25rem;letter-spacing:1.2rem;color:rgba(100,139,235,.28);pointer-events:none;
+}
+@media(max-width:700px){
+  [data-testid="stAppViewContainer"]::before{inset:60px 0 0 0}
+}
+
+
+/* Illustrated pastel cloud watermark system */
+.stApp{
+ background:
+  radial-gradient(ellipse 220px 95px at 5% 12%,rgba(174,211,255,.48) 0 55%,transparent 72%),
+  radial-gradient(ellipse 180px 80px at 13% 9%,rgba(194,219,255,.42) 0 54%,transparent 72%),
+  radial-gradient(ellipse 260px 110px at 96% 18%,rgba(183,207,255,.45) 0 52%,transparent 72%),
+  radial-gradient(ellipse 180px 75px at 88% 13%,rgba(210,198,255,.38) 0 55%,transparent 73%),
+  radial-gradient(ellipse 230px 90px at 3% 88%,rgba(172,213,255,.42) 0 53%,transparent 73%),
+  radial-gradient(ellipse 250px 100px at 96% 93%,rgba(255,217,198,.34) 0 52%,transparent 72%),
+  radial-gradient(ellipse 300px 120px at 68% 54%,rgba(221,215,255,.25) 0 48%,transparent 72%),
+  linear-gradient(135deg,#fbfcff 0%,#f1f5ff 45%,#fff8f2 100%) !important;
+ background-attachment:fixed!important;
+}
+[data-testid="stAppViewContainer"]{position:relative;isolation:isolate}
+[data-testid="stAppViewContainer"]::before{
+ content:"";position:fixed;inset:76px 0 0 250px;z-index:0;pointer-events:none;opacity:.72;
+ background:
+  radial-gradient(ellipse 95px 55px at 10% 12%,rgba(255,255,255,.92) 0 50%,transparent 72%),
+  radial-gradient(ellipse 130px 65px at 15% 12%,rgba(255,255,255,.76) 0 48%,transparent 72%),
+  radial-gradient(ellipse 100px 52px at 88% 25%,rgba(255,255,255,.84) 0 50%,transparent 72%),
+  radial-gradient(ellipse 150px 72px at 93% 24%,rgba(255,255,255,.7) 0 48%,transparent 72%),
+  radial-gradient(ellipse 115px 55px at 6% 76%,rgba(255,255,255,.78) 0 50%,transparent 72%),
+  radial-gradient(ellipse 160px 72px at 10% 78%,rgba(255,255,255,.62) 0 48%,transparent 72%),
+  radial-gradient(ellipse 125px 62px at 96% 86%,rgba(255,255,255,.76) 0 48%,transparent 72%);
+}
+[data-testid="stAppViewContainer"]::after{
+ content:"✦        ✧                       ✦";white-space:pre;position:fixed;top:112px;right:5%;z-index:-1;pointer-events:none;
+ color:rgba(106,145,235,.32);font-size:30px;letter-spacing:22px;line-height:2.2;
+}
+[data-testid="stSidebar"]{
+ background:
+  radial-gradient(ellipse 180px 75px at 10% 8%,rgba(180,213,255,.44),transparent 75%),
+  radial-gradient(ellipse 190px 85px at 85% 88%,rgba(201,190,255,.32),transparent 75%),
+  linear-gradient(180deg,#fffefa 0%,#f2f5ff 100%) !important;
+ position:relative;overflow:hidden;
+}
+[data-testid="stSidebar"]::after{
+ content:"";position:absolute;left:-55px;bottom:-24px;width:330px;height:220px;pointer-events:none;opacity:.95;
+ background:
+  radial-gradient(ellipse 100px 65px at 22% 56%,rgba(151,202,255,.48) 0 52%,transparent 72%),
+  radial-gradient(ellipse 130px 75px at 48% 66%,rgba(171,210,255,.42) 0 52%,transparent 72%),
+  radial-gradient(ellipse 115px 68px at 76% 53%,rgba(200,190,255,.32) 0 52%,transparent 72%);
+}
+.reference-hero,.page-hero{
+ background:
+  radial-gradient(ellipse 240px 110px at 95% 12%,rgba(176,207,255,.48),transparent 72%),
+  radial-gradient(ellipse 210px 95px at 83% 100%,rgba(211,197,255,.40),transparent 72%),
+  linear-gradient(105deg,rgba(255,255,255,.95),rgba(246,248,255,.88) 55%,rgba(235,241,255,.84)) !important;
+}
+.reference-hero::before,.page-hero::before{
+ content:"✦      〰      ✧";position:absolute;right:8%;top:18%;white-space:pre;
+ font-size:1.4rem;letter-spacing:.65rem;color:rgba(89,135,231,.43);pointer-events:none;
+}
+.workspace-section,.module-banner,.module-mini-card,.reference-metric,.reference-insight,.reference-feature,.metric-tile,.module-card{
+ backdrop-filter:blur(10px);background-color:rgba(255,255,255,.80);
+}
+@media(max-width:700px){[data-testid="stAppViewContainer"]::before{inset:60px 0 0 0}}
+
+
+div[data-testid="stVerticalBlockBorderWrapper"]{border-color:rgba(220,228,247,.9)!important}
+div[data-testid="stExpander"]{border:1px solid #e1e8f8!important;border-radius:16px!important;background:rgba(255,255,255,.74)!important}
+.stButton>button{transition:all .18s ease!important}
+.stButton>button:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(75,112,210,.17)!important}
+
 </style>
 
 """, unsafe_allow_html=True)
@@ -255,8 +375,90 @@ def brand():
 
 
 def set_page(page):
-
     st.session_state.page = page
+
+
+def infer_kpi_direction(column_name):
+    """Heuristic only; confirm KPI direction with the data owner."""
+    name = str(column_name).strip().lower().replace("_", " ").replace("-", " ")
+    lower_is_better = (
+        "fail", "failure", "absence", "absent", "dropout", "drop out",
+        "error", "incident", "complaint", "risk", "cost", "delay",
+        "debt", "defect", "missing", "late", "attrition", "turnover",
+        "unresolved", "penalty", "loss", "shortage"
+    )
+    return "Lower is better" if any(term in name for term in lower_is_better) else "Higher is better"
+
+
+def department_scorecard(data, directions):
+    """Rank departments using per-KPI percentile scores (0-100).
+
+    Department means are compared across departments. Direction is explicit per KPI;
+    missing KPI values are excluded from that department's score and coverage is shown.
+    This is a transparent relative ranking, not a validated predictive model.
+    """
+    if data is None or data.empty or "Department" not in data.columns:
+        return pd.DataFrame(), []
+    numeric_cols = data.select_dtypes(include="number").columns.tolist()
+    numeric_cols = [c for c in numeric_cols if data[c].notna().any()]
+    if not numeric_cols:
+        return pd.DataFrame(), []
+
+    working = data.copy()
+    working["Department"] = working["Department"].astype("string").str.strip()
+    working = working[working["Department"].notna() & (working["Department"] != "")]
+    if working.empty:
+        return pd.DataFrame(), numeric_cols
+
+    means = working.groupby("Department", dropna=True)[numeric_cols].mean(numeric_only=True)
+    score_parts = {}
+    for col in numeric_cols:
+        vals = means[col]
+        valid = vals.dropna()
+        if valid.empty:
+            continue
+        # Percentile rank is robust to units and outliers; ties receive average rank.
+        percentile = valid.rank(method="average", pct=True) * 100
+        if directions.get(col, infer_kpi_direction(col)) == "Lower is better":
+            percentile = 100 - percentile
+        score_parts[col] = percentile.reindex(means.index)
+
+    if not score_parts:
+        return pd.DataFrame(), numeric_cols
+
+    component_scores = pd.DataFrame(score_parts, index=means.index)
+    result = pd.DataFrame(index=means.index)
+    result["Performance Score"] = component_scores.mean(axis=1, skipna=True).round(1)
+    result["Risk Score"] = (100 - result["Performance Score"]).round(1)
+    result["KPIs Available"] = component_scores.notna().sum(axis=1)
+    result["KPI Coverage (%)"] = (component_scores.notna().mean(axis=1) * 100).round(0).astype("Int64")
+    result["Risk Level"] = result["Risk Score"].apply(
+        lambda x: "High" if x >= 66.7 else ("Moderate" if x >= 33.3 else "Low")
+    )
+    result = result.sort_values(["Risk Score", "Performance Score"], ascending=[False, True])
+    result.insert(0, "Department", result.index.astype(str))
+    result = result.reset_index(drop=True)
+    return result, numeric_cols
+
+
+def choose_kpi_directions(numeric_cols, key_prefix="kpi_direction"):
+    """Let users explicitly set the meaning of every numeric KPI."""
+    directions = {}
+    if not numeric_cols:
+        return directions
+    with st.expander("⚙️ Configure KPI meaning (important for accurate ranking)", expanded=False):
+        st.caption("Choose whether higher or lower values are better. Suggested defaults are inferred from column names and may be wrong.")
+        cols = st.columns(2)
+        for i, name in enumerate(numeric_cols):
+            default = infer_kpi_direction(name)
+            with cols[i % 2]:
+                directions[name] = st.selectbox(
+                    name,
+                    ["Higher is better", "Lower is better"],
+                    index=0 if default == "Higher is better" else 1,
+                    key=f"{key_prefix}_{name}",
+                )
+    return directions
 
 
 
@@ -303,6 +505,81 @@ if st.session_state.user:
 
             st.rerun()
 
+    # Consistent top utility bar across every authenticated workspace page.
+    if st.session_state.user:
+        st.markdown("""
+        <style>
+        .top-date-card{padding:.58rem .72rem;border:1px solid #e2e7f4;border-radius:13px;
+          background:rgba(255,255,255,.82);color:#344568;font-size:.72rem;line-height:1.45;white-space:nowrap}
+        .top-avatar{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;
+          background:linear-gradient(135deg,#9da7ff,#4d83eb);color:white;font-weight:800;font-size:1rem;margin:auto}
+        .top-utility [data-testid="stTextInput"] input{border-radius:13px!important;background:rgba(255,255,255,.86)!important}
+        .top-utility .stButton>button{min-height:2.5rem!important;height:2.5rem!important;width:2.5rem!important;
+          padding:0!important;border-radius:50%!important;background:rgba(255,255,255,.9)!important;
+          color:#36517f!important;border:1px solid #dce4f4!important;box-shadow:none!important}
+        .top-utility .stButton>button:hover{background:#edf2ff!important;transform:translateY(-1px)}
+        /* Streamlit renders the utility controls outside the empty wrapper; style the real controls too. */
+        [data-testid="stHorizontalBlock"] button[kind="secondary"]{
+          background:rgba(255,255,255,.94)!important;color:#36517f!important;
+          border:1px solid #dce4f4!important;border-radius:13px!important;
+          box-shadow:0 4px 14px rgba(56,83,150,.08)!important;
+        }
+        [data-testid="stHorizontalBlock"] button[kind="secondary"]:hover{
+          background:#edf2ff!important;border-color:#bfcdf4!important;
+        }
+        .stTextInput input{
+          background:rgba(255,255,255,.96)!important;color:#17213d!important;
+          border:1px solid #dce4f4!important;
+        }
+        .stDownloadButton>button,.stFormSubmitButton>button{
+          background:linear-gradient(110deg,#2864df,#6758d9)!important;color:#fff!important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+        st.markdown('<div class="top-utility"></div>', unsafe_allow_html=True)
+        search_col, notif_col, theme_col, avatar_col, date_col = st.columns([5.2, .48, .48, .5, 1.7], vertical_alignment="center")
+        with search_col:
+            st.text_input(
+                "Search departments, KPIs, insights",
+                key="global_workspace_search",
+                placeholder="⌕  Search departments, KPIs, insights…",
+                label_visibility="collapsed"
+            )
+        with notif_col:
+            if st.button("♧", key="top_notifications", help="Notifications"):
+                st.info("You're all caught up. New alerts will appear here when analysis produces them.")
+        with theme_col:
+            if "depthive_theme" not in st.session_state:
+                st.session_state.depthive_theme = "light"
+            if st.button("☼" if st.session_state.depthive_theme == "light" else "☾",
+                         key="top_theme_toggle", help="Toggle light / dark appearance"):
+                st.session_state.depthive_theme = "dark" if st.session_state.depthive_theme == "light" else "light"
+                st.rerun()
+        with avatar_col:
+            initial = str(st.session_state.user.get("name", "P") or "P")[:1].upper()
+            st.markdown(f'<div class="top-avatar">{initial}</div>', unsafe_allow_html=True)
+        with date_col:
+            now_label = datetime.now().strftime("%a, %d %b %Y<br>%H:%M")
+            st.markdown(f'<div class="top-date-card">▦ &nbsp; {now_label}</div>', unsafe_allow_html=True)
+
+        if st.session_state.get("depthive_theme") == "dark":
+            st.markdown("""<style>
+            .stApp{background:linear-gradient(135deg,#151c30,#202944 60%,#29243b)!important;color:#eef2ff!important}
+            [data-testid="stAppViewContainer"],[data-testid="stMain"]{background:transparent!important}
+            [data-testid="stSidebar"]{background:linear-gradient(180deg,#202943,#191f35)!important}
+            [data-testid="stSidebar"] *{color:#eef2ff!important}
+            .reference-hero,.page-hero,.workspace-section,.module-banner,.module-mini-card,.reference-metric,
+            .reference-insight,.reference-feature,.metric-tile,.module-card,.top-date-card{
+              background:rgba(35,44,70,.91)!important;border-color:#394565!important}
+            .reference-headline,.page-hero h1,.hero-description,.module-title,.module-section-heading,
+            .workspace-section-title,.metric-value,.metric-label,.insight-title,.insight-desc,.feature-title,.feature-desc,
+            h1,h2,h3,p,label{color:#edf1ff!important}
+            .stTextInput input,.stTextArea textarea,.stSelectbox [data-baseweb="select"]>div{
+              background:#222c46!important;color:#f1f4ff!important;border-color:#414e70!important}
+            div[data-testid="stTable"] table,div[data-testid="stTable"] tbody tr td{background:#222c46!important;color:#f1f4ff!important}
+            </style>""", unsafe_allow_html=True)
+
     # Keep the workspace canvas clean; each module provides its own visual heading.
     if choice != "Overview":
         page_descriptions = {
@@ -334,114 +611,101 @@ if st.session_state.user:
         if df is None:
             df = st.session_state.get("dataset")
 
-        dept_count = int(df["Department"].nunique()) if df is not None and "Department" in df.columns else None
-        missing_count = int(df.isna().sum().sum()) if df is not None else None
-        duplicate_count = int(df.duplicated().sum()) if df is not None else None
-
-        # Search / utility bar
-        top_left, top_right = st.columns([5, 1])
-        with top_left:
-            st.text_input("⌕  Search departments, KPIs, insights…", key="dashboard_search", label_visibility="collapsed", placeholder="⌕  Search departments, KPIs, insights…")
-        with top_right:
-            st.markdown('<div class="utility-pill">◉ &nbsp; Workspace</div>', unsafe_allow_html=True)
-
         st.markdown(
-            '<div class="reference-hero"><div class="reference-eyebrow">W E L C O M E &nbsp; T O &nbsp; D E P T H I V E</div>'
+            '<div class="reference-hero"><div class="reference-eyebrow">WELCOME TO DEPTHIVE</div>'
             '<div class="reference-headline">Organizational<br>Intelligence for <span>Smarter Decisions</span></div>'
-            '<div class="reference-description">Integrate data. Understand performance. Predict risks. Identify root causes.<br>'
-            'Recommend actions. Simulate decisions. Measure real impact.</div>'
-            '<div class="hero-note"><span>ANALYZE</span><span>PREDICT</span><span>RECOMMEND</span><span>SIMULATE</span><span>MEASURE</span></div></div>',
-            unsafe_allow_html=True
+            '<div class="reference-description">A decision-focused snapshot of data quality, department performance and risk signals.</div>'
+            '<div class="hero-note"><span>MEASURE</span><span>COMPARE</span><span>PRIORITIZE</span></div></div>',
+            unsafe_allow_html=True,
         )
 
-        st.markdown('<div class="section-kicker">ORGANIZATION SNAPSHOT</div>', unsafe_allow_html=True)
-        metrics = [
-            ("♡", "Organization Health", "Awaiting data", "Connect data to calculate", "green", "↗"),
-            ("▦", "Departments", str(dept_count) if dept_count is not None else "Not detected", "Distinct departments in dataset" if dept_count is not None else "Awaiting dataset", "blue", "▥"),
-            ("△", "Risks to Review", "Not assessed", "Requires risk analysis", "coral", "↗"),
-            ("✓", "Open Actions", "Not tracked", "Requires action records", "purple", "↘"),
-        ]
-        cols = st.columns(4)
-        for col, (symbol, label, value, note, theme, trend) in zip(cols, metrics):
-            with col:
-                st.markdown(
-                    f'<div class="reference-metric {theme}"><div class="metric-icon">{symbol}</div>'
-                    f'<div class="metric-content"><div class="metric-label">{label}</div>'
-                    f'<div class="metric-value">{value}</div><div class="metric-note">{note}</div></div>'
-                    f'<div class="metric-spark">{trend}</div></div>',
-                    unsafe_allow_html=True
-                )
+        if df is None or df.empty:
+            st.info("Upload a CSV or Excel file in Data Hub to populate your live overview.")
+            st.markdown("#### What you will see here")
+            a, b, c = st.columns(3)
+            a.markdown("**01 · Performance**\n\nDepartment comparisons and KPI trends.")
+            b.markdown("**02 · Risk signals**\n\nRanked areas that may need review.")
+            c.markdown("**03 · Data quality**\n\nMissing values, duplicates and coverage.")
+        else:
+            row_count, col_count = df.shape
+            missing_count = int(df.isna().sum().sum())
+            duplicate_count = int(df.duplicated().sum())
+            numeric_cols = df.select_dtypes(include="number").columns.tolist()
+            has_dept = "Department" in df.columns
+            dept_count = int(df["Department"].nunique(dropna=True)) if has_dept else 0
+            completeness = (1 - missing_count / max(1, row_count * col_count)) * 100
 
-        left, right = st.columns([1.8, 1])
-        with left:
-            st.markdown(
-                '<div class="panel-heading"><div class="panel-icon blue">▥</div><div class="panel-title">Department Performance Overview</div></div>',
-                unsafe_allow_html=True
-            )
-            if df is not None and "Department" in df.columns:
-                numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
-                if numeric_cols:
-                    selected = st.selectbox("Performance measure", numeric_cols, key="overview_performance_metric", label_visibility="collapsed")
-                    performance = df.groupby("Department")[selected].mean().sort_values(ascending=False)
-                    st.bar_chart(performance, use_container_width=True)
-                    st.caption(f"Average {selected} by department · based on uploaded data")
+            st.markdown('<div class="section-kicker">LIVE DATA SNAPSHOT</div>', unsafe_allow_html=True)
+            metrics = st.columns(5)
+            metrics[0].metric("Rows", f"{row_count:,}")
+            metrics[1].metric("Attributes", f"{col_count:,}")
+            metrics[2].metric("Departments", f"{dept_count:,}" if has_dept else "Not detected")
+            metrics[3].metric("Data completeness", f"{completeness:.1f}%")
+            metrics[4].metric("Duplicate rows", f"{duplicate_count:,}")
+
+            if not has_dept:
+                st.warning("Department-level ranking needs a column named exactly `Department`. Rename the matching column in your dataset to enable it.")
+            elif not numeric_cols:
+                st.warning("Department column found, but no numeric KPI columns are available for comparison.")
+            else:
+                inferred_directions = {c: infer_kpi_direction(c) for c in numeric_cols}
+                scorecard, used_cols = department_scorecard(df, inferred_directions)
+                left, right = st.columns([1.5, 1])
+                with left:
+                    st.markdown("### Department performance ranking")
+                    if not scorecard.empty:
+                        ranking_metric = st.selectbox("Rank departments by", ["Performance Score", "Risk Score"], key="overview_rank_metric")
+                        chart_data = scorecard.set_index("Department")[ranking_metric].sort_values(ascending=(ranking_metric == "Risk Score"))
+                        st.bar_chart(chart_data, use_container_width=True)
+                        st.caption("Scores are relative percentile-based comparisons across the departments in this dataset.")
+                with right:
+                    st.markdown("### Priority signals")
+                    if not scorecard.empty:
+                        high_risk = int((scorecard["Risk Level"] == "High").sum())
+                        moderate_risk = int((scorecard["Risk Level"] == "Moderate").sum())
+                        best = scorecard.sort_values("Performance Score", ascending=False).iloc[0]
+                        highest_risk = scorecard.sort_values("Risk Score", ascending=False).iloc[0]
+                        st.metric("High-risk departments", high_risk)
+                        st.metric("Moderate-risk departments", moderate_risk)
+                        st.success(f"Strongest relative performer: **{best['Department']}** ({best['Performance Score']:.1f}/100)")
+                        st.warning(f"First department to review: **{highest_risk['Department']}** (risk score {highest_risk['Risk Score']:.1f}/100)")
+
+                st.markdown("### Department scorecard")
+                display_cols = ["Department", "Performance Score", "Risk Score", "Risk Level", "KPIs Available", "KPI Coverage (%)"]
+                st.dataframe(scorecard[display_cols], use_container_width=True, hide_index=True)
+                with st.expander("See KPI averages by department"):
+                    st.dataframe(df.groupby("Department", dropna=True)[numeric_cols].mean(numeric_only=True).round(2).reset_index(), use_container_width=True, hide_index=True)
+                st.caption("Direction defaults are inferred from column names. Review them in Department Intelligence or Risk Center before relying on rankings. These are decision-support indicators, not guaranteed-accurate predictions.")
+
+            st.markdown("### Data quality at a glance")
+            q1, q2 = st.columns([1, 1.5])
+            with q1:
+                quality = pd.DataFrame({"Check": ["Present cells", "Missing cells", "Duplicate rows"], "Count": [int(df.notna().sum().sum()), missing_count, duplicate_count]})
+                st.bar_chart(quality.set_index("Check"))
+            with q2:
+                missing_by_col = df.isna().sum().sort_values(ascending=False)
+                missing_by_col = missing_by_col[missing_by_col > 0].head(10)
+                if missing_by_col.empty:
+                    st.success("No missing values detected in this dataset.")
                 else:
-                    st.info("Dataset connected, but no numeric columns are available for this chart.")
-            else:
-                st.markdown(
-                    '<div class="chart-empty"><div class="empty-chart-symbol">▥</div>'
-                    '<div class="empty-chart-title">Your department chart will appear here</div>'
-                    '<div class="empty-chart-copy">Upload data containing a Department column and numeric measures to see real comparisons.</div></div>',
-                    unsafe_allow_html=True
-                )
-        with right:
-            st.markdown(
-                '<div class="panel-heading"><div class="panel-icon amber">♧</div><div class="panel-title">Key Insights</div></div>',
-                unsafe_allow_html=True
-            )
-            if df is not None:
-                insight_items = [
-                    ("▥", "Dataset connected", f"{len(df):,} rows · {len(df.columns)} columns", "green"),
-                    ("◇", "Data quality snapshot", f"{missing_count:,} missing cells · {duplicate_count:,} duplicate rows", "coral"),
-                ]
-                if dept_count is not None:
-                    insight_items.append(("▦", "Department coverage", f"{dept_count} distinct departments found", "blue"))
-            else:
-                insight_items = [
-                    ("▥", "Performance patterns", "Connect data to reveal department trends.", "green"),
-                    ("△", "Risk signals", "Risk insights appear after analysis is available.", "coral"),
-                    ("▤", "Resource opportunities", "Explore opportunities from your organizational data.", "blue"),
-                    ("✦", "Decision support", "Turn evidence into practical next steps.", "purple"),
-                ]
-            for icon, title, desc, theme in insight_items:
-                st.markdown(
-                    f'<div class="reference-insight"><div class="insight-icon {theme}">{icon}</div>'
-                    f'<div class="insight-text"><div class="insight-title">{title}</div>'
-                    f'<div class="insight-desc">{desc}</div></div><div class="insight-arrow">→</div></div>',
-                    unsafe_allow_html=True
-                )
+                    st.markdown("**Columns with the most missing values**")
+                    st.bar_chart(missing_by_col)
+                    st.dataframe(missing_by_col.rename("Missing cells").reset_index(names="Attribute"), use_container_width=True, hide_index=True)
 
         st.markdown('<div class="section-kicker">EXPLORE YOUR WORKSPACE</div>', unsafe_allow_html=True)
         feature_data = [
-            ("▤", "Data Hub", "Upload, clean and manage your data.", "blue"),
-            ("♙", "Department Intelligence", "Deep dive into department performance.", "lavender"),
-            ("↗", "Predictive Analytics", "Forecast trends and identify risks.", "sky"),
-            ("⚗", "What-If Lab", "Simulate decisions and compare outcomes.", "peach"),
+            ("▤", "Data Hub", "Upload, validate and clean your data.", "blue"),
+            ("♙", "Department Intelligence", "Compare performance and rank departments.", "lavender"),
+            ("△", "Risk Center", "Review configurable risk factors.", "peach"),
+            ("⚗", "What-If Lab", "Explore scenario assumptions.", "sky"),
         ]
         feature_cols = st.columns(4)
         for col, (icon, title, desc, theme) in zip(feature_cols, feature_data):
             with col:
-                st.markdown(
-                    f'<div class="reference-feature {theme}"><div class="feature-art">{icon}</div>'
-                    f'<div class="feature-title">{title}</div><div class="feature-desc">{desc}</div>'
-                    f'<div class="feature-arrow">↗</div></div>',
-                    unsafe_allow_html=True
-                )
-        st.caption("DEPTHIVE · Organizational Intelligence · Live metrics are shown only when supported by connected data.")
+                st.markdown(f'<div class="reference-feature {theme}"><div class="feature-art">{icon}</div><div class="feature-title">{title}</div><div class="feature-desc">{desc}</div></div>', unsafe_allow_html=True)
+        st.caption("DEPTHIVE · Metrics are calculated from the currently uploaded dataset.")
 
     elif choice == "Data Hub":
-        st.markdown('<div class="workspace-section"><div class="workspace-section-title">Data intake & quality</div><div class="workspace-section-copy">Bring in a CSV or Excel file, inspect its structure, and review quality signals before using it in analysis.</div></div>', unsafe_allow_html=True)
-
         st.markdown('<div class="module-banner"><div class="module-banner-icon">▤</div><div><div class="module-banner-title">Your data, ready for intelligence</div><div class="module-banner-copy">Import a dataset, inspect its quality, and prepare it for analysis in one workspace.</div></div></div>', unsafe_allow_html=True)
         st.subheader("Data intake")
 
@@ -633,81 +897,42 @@ if st.session_state.user:
                 st.error(f"Could not process this file: {e}")
 
     elif choice == "Department Intelligence":
-        st.markdown('<div class="workspace-section"><div class="workspace-section-title">Department performance workspace</div><div class="workspace-section-copy">Use connected department data to review rankings, compare scores and understand where performance differs.</div></div>', unsafe_allow_html=True)
-
-        st.subheader("Department Performance Intelligence")
-
-
-
+        st.markdown('<div class="workspace-section"><div class="workspace-section-title">Department performance intelligence</div><div class="workspace-section-copy">A relative, configurable ranking that accounts for whether each KPI should increase or decrease.</div></div>', unsafe_allow_html=True)
         df = st.session_state.get("uploaded_preview")
-
-
-
-        if df is None:
-
+        if df is None or df.empty:
             st.info("Please upload a dataset in Data Hub first.")
-
-
-
+        elif "Department" not in df.columns:
+            st.warning("Dataset must contain a column named exactly `Department`.")
         else:
-
-            result = analyze_department_performance(df)
-
-
-
-            if not result["success"]:
-
-                st.warning(result["message"])
-
-
-
+            numeric_cols = [c for c in df.select_dtypes(include="number").columns if df[c].notna().any()]
+            if not numeric_cols:
+                st.warning("No numeric KPI columns found. Convert the metrics you want to analyze to numeric values.")
             else:
-
-                performance = result["department_performance"]
-
-
-
-                col1, col2 = st.columns(2)
-
-
-
-                col1.metric(
-
-                    "Total Departments",
-
-                    result["total_departments"]
-
-                )
-
-
-
-                col2.metric(
-
-                    "Top Performing Department",
-
-                    result["top_department"]
-
-                )
-
-
-
-                st.markdown('<div class="module-section-heading">Department performance ranking</div>', unsafe_allow_html=True)
-
-                st.dataframe(
-
-                    performance,
-
-                    use_container_width=True
-
-                )
-
-
-
-                st.markdown('<div class="module-section-heading">Performance score comparison</div>', unsafe_allow_html=True)
-
-                st.bar_chart(performance["Performance Score"])
-
-
+                directions = choose_kpi_directions(numeric_cols, "department_direction")
+                # Expander returns only values interacted with in this run; fill all other values with inferred defaults.
+                full_directions = {c: directions.get(c, infer_kpi_direction(c)) for c in numeric_cols}
+                scorecard, _ = department_scorecard(df, full_directions)
+                if scorecard.empty:
+                    st.warning("Not enough valid department data to calculate a ranking.")
+                else:
+                    best = scorecard.sort_values("Performance Score", ascending=False).iloc[0]
+                    review = scorecard.sort_values("Risk Score", ascending=False).iloc[0]
+                    m1, m2, m3, m4 = st.columns(4)
+                    m1.metric("Departments", len(scorecard))
+                    m2.metric("Top performer", str(best["Department"]))
+                    m3.metric("Lowest relative score", str(review["Department"]))
+                    m4.metric("Mean performance score", f"{scorecard['Performance Score'].mean():.1f}/100")
+                    left, right = st.columns(2)
+                    with left:
+                        st.markdown("### Performance score")
+                        st.bar_chart(scorecard.set_index("Department")["Performance Score"].sort_values(ascending=False), use_container_width=True)
+                    with right:
+                        st.markdown("### Risk priority")
+                        st.bar_chart(scorecard.set_index("Department")["Risk Score"].sort_values(ascending=False), use_container_width=True)
+                    st.markdown("### Ranked department scorecard")
+                    st.dataframe(scorecard, use_container_width=True, hide_index=True)
+                    st.download_button("Download department ranking (CSV)", scorecard.to_csv(index=False).encode("utf-8"), file_name="depthive_department_ranking.csv", mime="text/csv")
+                    st.caption("Method: each department's mean for each KPI is converted to a percentile rank; direction is applied per KPI; KPI scores are averaged. This creates a relative ranking, not absolute performance truth. Check KPI direction and data quality before using it for decisions.")
 
     elif choice == "KPI Explorer":
         st.markdown('<div class="workspace-section"><div class="workspace-section-title">KPI analysis workspace</div><div class="workspace-section-copy">Select a numeric KPI and explore its average, minimum, maximum, distribution and department-level comparison.</div></div>', unsafe_allow_html=True)
@@ -1153,201 +1378,74 @@ if st.session_state.user:
                     st.warning("No usable numeric KPI values were found.")
 
     elif choice == "Risk Center":
-        st.markdown('<div class="workspace-section"><div class="workspace-section-title">Risk review workspace</div><div class="workspace-section-copy">Review available risk indicators and supporting data. No risk scores are invented when data is unavailable.</div></div>', unsafe_allow_html=True)
-
-        st.subheader("🚨 Risk Center")
-
-        st.write("Identify departments that may need attention.")
-
-
-
+        st.markdown('<div class="workspace-section"><div class="workspace-section-title">Risk factor analysis</div><div class="workspace-section-copy">Prioritize departments using KPI direction, relative performance and data coverage instead of treating every low number as a risk.</div></div>', unsafe_allow_html=True)
+        st.subheader("Risk Center")
         df = st.session_state.get("uploaded_preview")
-
-
-
-        if df is None:
-
+        if df is None or df.empty:
             st.info("Please upload a dataset in Data Hub first.")
-
-
-
         elif "Department" not in df.columns:
-
-            st.warning(
-
-                "Dataset must contain a 'Department' column."
-
-            )
-
-
-
+            st.warning("Dataset must contain a column named exactly `Department`.")
         else:
-
-            numeric_columns = df.select_dtypes(
-
-                include=["number"]
-
-            ).columns.tolist()
-
-
-
-            if not numeric_columns:
-
+            numeric_cols = [c for c in df.select_dtypes(include="number").columns if df[c].notna().any()]
+            if not numeric_cols:
                 st.warning("No numeric KPI columns found.")
-
-
-
             else:
-
-                risk_records = []
-
-
-
-                for department in df["Department"].dropna().unique():
-
-                    dept_df = df[df["Department"] == department]
-
-                    risk_count = 0
-
-                    checked_count = 0
-
-
-
-                    for col in numeric_columns:
-
-                        dept_avg = pd.to_numeric(
-
-                            dept_df[col], errors="coerce"
-
-                        ).mean()
-
-
-
-                        overall_avg = pd.to_numeric(
-
-                            df[col], errors="coerce"
-
-                        ).mean()
-
-
-
-                        if pd.isna(dept_avg) or pd.isna(overall_avg):
-
-                            continue
-
-
-
-                        checked_count += 1
-
-
-
-                        if overall_avg != 0 and dept_avg < overall_avg * 0.8:
-
-                            risk_count += 1
-
-
-
-                    if checked_count == 0:
-
-                        risk_level = "Insufficient Data"
-
-                    elif risk_count >= 2:
-
-                        risk_level = "High Risk"
-
-                    elif risk_count == 1:
-
-                        risk_level = "Medium Risk"
-
-                    else:
-
-                        risk_level = "Low Risk"
-
-
-
-                    risk_records.append({
-
-                        "Department": department,
-
-                        "KPIs Below 80% of Overall Average": risk_count,
-
-                        "KPIs Checked": checked_count,
-
-                        "Risk Level": risk_level
-
-                    })
-
-
-
-                risk_df = pd.DataFrame(risk_records)
-
-
-
-                high = (risk_df["Risk Level"] == "High Risk").sum()
-
-                medium = (risk_df["Risk Level"] == "Medium Risk").sum()
-
-                low = (risk_df["Risk Level"] == "Low Risk").sum()
-
-
-
-                col1, col2, col3 = st.columns(3)
-
-
-
-                col1.metric("🔴 High Risk", int(high))
-
-                col2.metric("🟡 Medium Risk", int(medium))
-
-                col3.metric("🟢 Low Risk", int(low))
-
-
-
-                st.markdown("### Department Risk Assessment")
-
-
-
-                st.dataframe(
-
-                    risk_df,
-
-                    use_container_width=True,
-
-                    hide_index=True
-
-                )
-
-
-
-                st.markdown("### Risk Overview")
-
-
-
-                chart_df = risk_df.set_index("Department")[
-
-                    "KPIs Below 80% of Overall Average"
-
-                ]
-
-
-
-                st.bar_chart(chart_df)
-
-
-
-                st.caption(
-
-                    "Prototype risk screening: a KPI is flagged when its "
-
-                    "department average is below 80% of the overall average. "
-
-                    "This assumes lower values are undesirable. Configure "
-
-                    "KPI-specific thresholds and business rules before "
-
-                    "using this for real decisions."
-
-                )
+                directions = choose_kpi_directions(numeric_cols, "risk_direction")
+                full_directions = {c: directions.get(c, infer_kpi_direction(c)) for c in numeric_cols}
+                scorecard, _ = department_scorecard(df, full_directions)
+                if scorecard.empty:
+                    st.warning("Not enough valid data to calculate risk scores.")
+                else:
+                    high = int((scorecard["Risk Level"] == "High").sum())
+                    moderate = int((scorecard["Risk Level"] == "Moderate").sum())
+                    low = int((scorecard["Risk Level"] == "Low").sum())
+                    a, b, c, d = st.columns(4)
+                    a.metric("High priority", high)
+                    b.metric("Moderate priority", moderate)
+                    c.metric("Low priority", low)
+                    d.metric("KPIs analyzed", len(numeric_cols))
+
+                    left, right = st.columns([1.25, 1])
+                    with left:
+                        st.markdown("### Risk priority by department")
+                        risk_chart = scorecard.set_index("Department")["Risk Score"].sort_values(ascending=False)
+                        st.bar_chart(risk_chart, use_container_width=True)
+                    with right:
+                        st.markdown("### Risk factor contribution")
+                        dept_options = scorecard["Department"].astype(str).tolist()
+                        selected_dept = st.selectbox("Inspect department", dept_options, key="risk_factor_department")
+                        subset = df[df["Department"].astype("string").str.strip() == selected_dept]
+                        dept_means = subset[numeric_cols].mean(numeric_only=True)
+                        overall_means = df[numeric_cols].mean(numeric_only=True)
+                        factor_rows = []
+                        for col in numeric_cols:
+                            dv, ov = dept_means.get(col), overall_means.get(col)
+                            if pd.isna(dv) or pd.isna(ov):
+                                continue
+                            # Display relative difference, while risk score itself is percentile based.
+                            delta = ((float(dv) - float(ov)) / abs(float(ov)) * 100) if float(ov) != 0 else None
+                            direction = full_directions[col]
+                            is_unfavorable = (float(dv) < float(ov)) if direction == "Higher is better" else (float(dv) > float(ov))
+                            factor_rows.append({"Risk factor": col, "Department average": round(float(dv), 2), "Overall average": round(float(ov), 2), "Difference (%)": round(delta, 1) if delta is not None else "N/A", "Direction": direction, "Signal": "Review" if is_unfavorable else "Favourable"})
+                        factor_df = pd.DataFrame(factor_rows)
+                        if not factor_df.empty:
+                            st.dataframe(factor_df.sort_values("Signal", ascending=False), use_container_width=True, hide_index=True)
+                        else:
+                            st.info("Not enough non-missing values to compare this department.")
+
+                    st.markdown("### Department risk ranking")
+                    st.dataframe(scorecard.sort_values("Risk Score", ascending=False), use_container_width=True, hide_index=True)
+                    st.download_button("Download risk assessment (CSV)", scorecard.to_csv(index=False).encode("utf-8"), file_name="depthive_risk_assessment.csv", mime="text/csv")
+                    with st.expander("How the risk score works"):
+                        st.markdown("""
+                        1. Calculate each department's mean for every numeric KPI.
+                        2. Convert each KPI's department averages into percentile ranks, so different units can be compared.
+                        3. Reverse the percentile for KPIs marked **Lower is better**.
+                        4. Average the available KPI scores into a performance score; risk score = 100 − performance score.
+                        5. Label risk as High (66.7–100), Moderate (33.3–66.6) or Low (0–33.2).
+
+                        **Important:** this is a transparent relative screening algorithm, not a clinically/financially/operationally validated model. Column-name defaults are only suggestions. Configure directions using domain knowledge and add explicit targets/weights if some KPIs matter more than others.
+                        """)
 
     elif choice == "Recommendations & Actions":
         st.markdown('<div class="workspace-section"><div class="workspace-section-title">From findings to action</div><div class="workspace-section-copy">Review available recommendations and define follow-up actions based on organizational evidence.</div></div>', unsafe_allow_html=True)
