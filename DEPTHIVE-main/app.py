@@ -1,4 +1,5 @@
-import os, io, sqlite3, hashlib, secrets, html, re
+import os, io, sqlite3, hashlib, secrets, html
+import json
 from datetime import datetime
 from pathlib import Path
 import pandas as pd
@@ -98,110 +99,36 @@ hr{border-color:#e1ddcf!important}
 """, unsafe_allow_html=True)
 
 # ---------- persistence ----------
-# Cloud uses Supabase PostgreSQL when [connections.postgresql].url is set in Streamlit Secrets.
-# Local development continues to use SQLite.
-USE_POSTGRES = bool(st.secrets.get("connections", {}).get("postgresql", {}).get("url", ""))
-
-if USE_POSTGRES:
-    try:
-        import psycopg2
-        from psycopg2.extras import RealDictCursor
-    except ImportError as exc:
-        st.error("Missing psycopg2-binary. Add it to requirements.txt and redeploy.")
-        st.stop()
-
-    class HybridRow(dict):
-        def __getitem__(self, key):
-            if isinstance(key, int):
-                return list(self.values())[key]
-            return super().__getitem__(key)
-
-    class PGCursor:
-        def __init__(self, cursor): self.cursor = cursor
-        def execute(self, sql, params=None):
-            # Convert SQLite-style placeholders only. When no parameters are
-            # supplied, call execute(sql) without an empty tuple so literal
-            # percent signs in SQL (for example LIKE 'Student%') are safe.
-            sql = sql.replace("?", "%s")
-            if params:
-                self.cursor.execute(sql, params)
-            else:
-                self.cursor.execute(sql)
-            return self
-        def fetchone(self):
-            row = self.cursor.fetchone()
-            return HybridRow(row) if row is not None else None
-        def fetchall(self):
-            return [HybridRow(r) for r in self.cursor.fetchall()]
-
-    class PGConnection:
-        def __init__(self):
-            url = st.secrets["connections"]["postgresql"]["url"]
-            self.raw = psycopg2.connect(url, sslmode="require", cursor_factory=RealDictCursor)
-        def execute(self, sql, params=None):
-            cur = PGCursor(self.raw.cursor())
-            return cur.execute(sql, params)
-        def __enter__(self): return self
-        def __exit__(self, typ, value, tb):
-            if typ is None: self.raw.commit()
-            else: self.raw.rollback()
-            self.raw.close()
-        def close(self): self.raw.close()
-
-    def conn(): return PGConnection()
-    DB_INTEGRITY_ERRORS = (psycopg2.IntegrityError,)
-else:
-    def conn():
-        c = sqlite3.connect(DB_PATH, check_same_thread=False)
-        c.row_factory = sqlite3.Row
-        return c
-    DB_INTEGRITY_ERRORS = (sqlite3.IntegrityError,)
+def conn():
+    c = sqlite3.connect(DB_PATH, check_same_thread=False)
+    c.row_factory = sqlite3.Row
+    return c
 
 def init_db():
     with conn() as c:
-        if USE_POSTGRES:
-            c.execute("""CREATE TABLE IF NOT EXISTS users(
-                id BIGSERIAL PRIMARY KEY, full_name TEXT NOT NULL, email TEXT UNIQUE NOT NULL,
-                salt TEXT NOT NULL, password_hash TEXT NOT NULL, role TEXT NOT NULL,
-                department TEXT DEFAULT '', academic_year INTEGER DEFAULT 0, approved INTEGER DEFAULT 1,
-                created_at TEXT NOT NULL, avatar_path TEXT DEFAULT '')""")
-            c.execute("""CREATE TABLE IF NOT EXISTS student_profiles(
-                user_id BIGINT PRIMARY KEY, student_id TEXT, department TEXT, academic_year INTEGER,
-                semester TEXT, cgpa DOUBLE PRECISION, attendance DOUBLE PRECISION, skills TEXT, projects TEXT, career_goal TEXT,
-                updated_at TEXT, FOREIGN KEY(user_id) REFERENCES users(id))""")
-            c.execute("""CREATE TABLE IF NOT EXISTS uploads(
-                id BIGSERIAL PRIMARY KEY, uploader_id BIGINT, category TEXT, department TEXT,
-                academic_year INTEGER, file_name TEXT, stored_path TEXT, uploaded_at TEXT, notes TEXT)""")
-            c.execute("""CREATE TABLE IF NOT EXISTS audit_log(
-                id BIGSERIAL PRIMARY KEY, user_id BIGINT, action TEXT, detail TEXT, created_at TEXT)""")
-            c.execute("""CREATE TABLE IF NOT EXISTS approval_history(
-                id BIGSERIAL PRIMARY KEY, approved_user_id BIGINT NOT NULL,
-                approved_by_user_id BIGINT NOT NULL, approved_user_name TEXT NOT NULL,
-                approved_user_email TEXT NOT NULL, approved_role TEXT NOT NULL,
-                department TEXT DEFAULT '', approved_at TEXT NOT NULL)""")
-        else:
-            c.execute("""CREATE TABLE IF NOT EXISTS users(
-                id INTEGER PRIMARY KEY AUTOINCREMENT, full_name TEXT NOT NULL, email TEXT UNIQUE NOT NULL,
-                salt TEXT NOT NULL, password_hash TEXT NOT NULL, role TEXT NOT NULL,
-                department TEXT DEFAULT '', academic_year INTEGER DEFAULT 0, approved INTEGER DEFAULT 1,
-                created_at TEXT NOT NULL, avatar_path TEXT DEFAULT '')""")
-            c.execute("""CREATE TABLE IF NOT EXISTS student_profiles(
-                user_id INTEGER PRIMARY KEY, student_id TEXT, department TEXT, academic_year INTEGER,
-                semester TEXT, cgpa REAL, attendance REAL, skills TEXT, projects TEXT, career_goal TEXT,
-                updated_at TEXT, FOREIGN KEY(user_id) REFERENCES users(id))""")
-            c.execute("""CREATE TABLE IF NOT EXISTS uploads(
-                id INTEGER PRIMARY KEY AUTOINCREMENT, uploader_id INTEGER, category TEXT, department TEXT,
-                academic_year INTEGER, file_name TEXT, stored_path TEXT, uploaded_at TEXT, notes TEXT)""")
-            c.execute("""CREATE TABLE IF NOT EXISTS audit_log(
-                id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, action TEXT, detail TEXT, created_at TEXT)""")
-            c.execute("""CREATE TABLE IF NOT EXISTS approval_history(
-                id INTEGER PRIMARY KEY AUTOINCREMENT, approved_user_id INTEGER NOT NULL,
-                approved_by_user_id INTEGER NOT NULL, approved_user_name TEXT NOT NULL,
-                approved_user_email TEXT NOT NULL, approved_role TEXT NOT NULL,
-                department TEXT DEFAULT '', approved_at TEXT NOT NULL)""")
-            user_columns = {row[1] for row in c.execute("PRAGMA table_info(users)").fetchall()}
-            if "avatar_path" not in user_columns:
-                c.execute("ALTER TABLE users ADD COLUMN avatar_path TEXT DEFAULT ''")
+        c.execute("""CREATE TABLE IF NOT EXISTS users(
+            id INTEGER PRIMARY KEY AUTOINCREMENT, full_name TEXT NOT NULL, email TEXT UNIQUE NOT NULL,
+            salt TEXT NOT NULL, password_hash TEXT NOT NULL, role TEXT NOT NULL,
+            department TEXT DEFAULT '', academic_year INTEGER DEFAULT 0, approved INTEGER DEFAULT 1,
+            created_at TEXT NOT NULL, avatar_path TEXT DEFAULT '')""")
+        c.execute("""CREATE TABLE IF NOT EXISTS student_profiles(
+            user_id INTEGER PRIMARY KEY, student_id TEXT, department TEXT, academic_year INTEGER,
+            semester TEXT, cgpa REAL, attendance REAL, skills TEXT, projects TEXT, career_goal TEXT,
+            updated_at TEXT, FOREIGN KEY(user_id) REFERENCES users(id))""")
+        c.execute("""CREATE TABLE IF NOT EXISTS uploads(
+            id INTEGER PRIMARY KEY AUTOINCREMENT, uploader_id INTEGER, category TEXT, department TEXT,
+            academic_year INTEGER, file_name TEXT, stored_path TEXT, uploaded_at TEXT, notes TEXT)""")
+        c.execute("""CREATE TABLE IF NOT EXISTS audit_log(
+            id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, action TEXT, detail TEXT, created_at TEXT)""")
+        c.execute("""CREATE TABLE IF NOT EXISTS approval_history(
+            id INTEGER PRIMARY KEY AUTOINCREMENT, approved_user_id INTEGER NOT NULL,
+            approved_by_user_id INTEGER NOT NULL, approved_user_name TEXT NOT NULL,
+            approved_user_email TEXT NOT NULL, approved_role TEXT NOT NULL,
+            department TEXT DEFAULT '', approved_at TEXT NOT NULL)""")
+        # Safe migration for databases created before profile photos were supported.
+        user_columns = {row[1] for row in c.execute("PRAGMA table_info(users)").fetchall()}
+        if "avatar_path" not in user_columns:
+            c.execute("ALTER TABLE users ADD COLUMN avatar_path TEXT DEFAULT ''")
 
 def password_hash(password, salt):
     return hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 180000).hex()
@@ -220,9 +147,9 @@ def register_user(name, email, password, role, department="", academic_year=0):
     try:
         with conn() as c:
             c.execute("INSERT INTO users(full_name,email,salt,password_hash,role,department,academic_year,approved,created_at) VALUES(?,?,?,?,?,?,?,?,?)",
-                      (name.strip(), email.strip().lower(), salt, password_hash(password, salt), role, (department or "").strip(), int(academic_year or 0), approved, datetime.now().isoformat(timespec="seconds")))
+                      (name.strip(), email.strip().lower(), salt, password_hash(password, salt), role, department.strip(), int(academic_year or 0), approved, datetime.now().isoformat(timespec="seconds")))
         return True, "Account created. Staff accounts require approval by an administrator."
-    except DB_INTEGRITY_ERRORS:
+    except sqlite3.IntegrityError:
         return False, "An account with this email already exists."
 
 def authenticate(email, password):
@@ -370,96 +297,6 @@ def risk_analysis(df):
         records.append({"Student ID": str(r.get("student_id", "")), "Department": r.get("department", "Unspecified"), "Year": year if year else "Not set", "CGPA": round(cgpa, 2) if pd.notna(cgpa) else None, "Attendance %": round(attendance, 1) if pd.notna(attendance) else None, "Active Backlogs": int(backlogs) if pd.notna(backlogs) else None, "Risk Score": score, "Risk Level": level, "Risk Factors": "; ".join(factors) if factors else "No configured risk trigger detected"})
     return pd.DataFrame(records)
 
-
-def train_future_risk_model(df):
-    """Train only on historical, explicitly labelled outcomes; never invent labels."""
-    data = normalize_columns(df)
-    label_candidates = {
-        "future_risk", "risk_outcome", "academic_outcome", "next_semester_outcome",
-        "failed_next_semester", "semester_result", "outcome", "at_risk_next_semester",
-        "next_semester_status", "promotion_status"
-    }
-    label_col = next((c for c in data.columns if norm(c) in label_candidates), None)
-    if label_col is None:
-        return None, None, "No historical outcome label was found. Add a column such as `next_semester_outcome` (for example: At Risk / Not At Risk) to train and evaluate an ML model. Current CGPA/attendance alone cannot validate future predictions."
-
-    feature_cols = [c for c in ["cgpa", "attendance", "backlogs", "year"] if c in data.columns]
-    for col in ["cgpa", "attendance", "backlogs", "year"]:
-        if col not in data.columns:
-            data[col] = pd.NA
-    feature_cols = ["cgpa", "attendance", "backlogs", "year"]
-    for col in feature_cols:
-        data[col] = numeric(data, col)
-    labels = data[label_col].astype(str).str.strip()
-    valid = labels.notna() & ~labels.str.lower().isin(["", "nan", "none", "unknown", "na", "n/a"])
-    model_data = data.loc[valid, feature_cols].copy()
-    y = labels.loc[valid]
-    if len(model_data) < 20 or y.nunique() < 2 or y.value_counts().min() < 3:
-        return None, None, f"Not enough labelled history to train reliably ({len(model_data)} labelled rows found). Add at least 20 labelled past records and multiple examples for each outcome."
-    try:
-        from sklearn.ensemble import RandomForestClassifier
-        from sklearn.impute import SimpleImputer
-        from sklearn.pipeline import make_pipeline
-        from sklearn.model_selection import train_test_split
-        from sklearn.metrics import accuracy_score
-        X_train, X_test, y_train, y_test = train_test_split(
-            model_data, y, test_size=0.25, random_state=42, stratify=y
-        )
-        model = make_pipeline(
-            SimpleImputer(strategy="median", keep_empty_features=True),
-            RandomForestClassifier(n_estimators=200, random_state=42, class_weight="balanced")
-        )
-        model.fit(X_train, y_train)
-        accuracy = accuracy_score(y_test, model.predict(X_test))
-        current = data[feature_cols].copy()
-        predictions = model.predict(current)
-        probabilities = model.predict_proba(current).max(axis=1) * 100
-        result = data.copy()
-        result["ML Predicted Outcome"] = predictions
-        result["Model Confidence %"] = probabilities.round(1)
-        result["ML Prediction"] = "Experimental — validate before decisions"
-        return result, accuracy, f"Model trained on {len(model_data)} labelled historical records; held-out accuracy {accuracy:.1%}. This is an experimental estimate, not a guarantee."
-    except ImportError:
-        return None, None, "ML dependency missing. Add `scikit-learn` to requirements.txt and redeploy."
-    except Exception as exc:
-        return None, None, f"Could not train the model: {exc}"
-
-
-def simulate_action_impact(df):
-    """Transparent what-if simulation, not a causal or trained intervention-impact model."""
-    before = normalize_columns(df)
-    after = before.copy()
-    for col in ["cgpa", "attendance", "backlogs"]:
-        after[col] = numeric(after, col)
-    if "attendance" in after.columns:
-        after["attendance"] = (after["attendance"] + 10).clip(upper=100)
-    if "cgpa" in after.columns:
-        after["cgpa"] = (after["cgpa"] + 0.3).clip(upper=10)
-    if "backlogs" in after.columns:
-        after["backlogs"] = (after["backlogs"] - 1).clip(lower=0)
-    before_scores = risk_analysis(before)
-    after_scores = risk_analysis(after)
-    if before_scores.empty:
-        return pd.DataFrame(), {"students": 0, "improved": 0, "avg_reduction": 0}
-    compare = before_scores[["Student ID", "Department", "Year", "Risk Score", "Risk Level"]].copy()
-    compare = compare.rename(columns={"Risk Score": "Current Risk Score", "Risk Level": "Current Risk Level"})
-    compare["Scenario Risk Score"] = after_scores["Risk Score"].values
-    compare["Scenario Risk Level"] = after_scores["Risk Level"].values
-    compare["Score Reduction"] = compare["Current Risk Score"] - compare["Scenario Risk Score"]
-    compare["Suggested Action"] = before_scores["Risk Factors"].apply(
-        lambda factors: "; ".join(
-            ( ["Attendance support plan"] if "Attendance" in factors else [] ) +
-            ( ["Academic tutoring / CGPA improvement plan"] if "CGPA" in factors else [] ) +
-            ( ["Backlog-clearing mentoring"] if "backlog" in factors.lower() else [] )
-        ) or "Continue monitoring and verify student data"
-    )
-    summary = {
-        "students": len(compare),
-        "improved": int((compare["Score Reduction"] > 0).sum()),
-        "avg_reduction": round(float(compare["Score Reduction"].mean()), 1) if len(compare) else 0,
-    }
-    return compare, summary
-
 def placement_summary(df):
     data = normalize_columns(df)
     if "department" not in data.columns: return pd.DataFrame(), "Dataset needs a Department column."
@@ -522,6 +359,85 @@ def narrative_health(avg_cgpa=None, avg_attendance=None, high_risk_pct=None, pla
         summary += " Review the individual indicators and compare similar cohorts before labelling overall performance as good or risky."
     return summary
 
+def load_copilot_qa():
+    """Load reviewed Q&A examples from the project data folder."""
+    candidates = [
+        APP_DIR / "data" / "depthive_copilot_qa_reviewed.jsonl",
+        APP_DIR / "depthive_copilot_qa_reviewed.jsonl",
+        APP_DIR.parent / "data" / "depthive_copilot_qa_reviewed.jsonl",
+    ]
+    dataset_path = next((p for p in candidates if p.exists()), None)
+    if dataset_path is None:
+        return []
+
+    records = []
+    try:
+        with open(dataset_path, "r", encoding="utf-8") as f:
+            for line in f:
+                if not line.strip():
+                    continue
+                try:
+                    item = json.loads(line)
+                    messages = item.get("messages", [])
+                    user_text = next((m.get("content", "") for m in messages if m.get("role") == "user"), "")
+                    answer_text = next((m.get("content", "") for m in messages if m.get("role") == "assistant"), "")
+                    if not user_text or not answer_text:
+                        continue
+                    role = "Any authorized role"
+                    question_text = user_text.strip()
+                    if question_text.startswith("[Role:") and "]" in question_text:
+                        role = question_text.split("]", 1)[0].replace("[Role:", "").strip()
+                        question_text = question_text.split("]", 1)[1].strip()
+                    records.append({"role": role, "question": question_text, "answer": answer_text})
+                except (json.JSONDecodeError, AttributeError, TypeError):
+                    continue
+    except OSError:
+        return []
+    return records
+
+
+def retrieve_copilot_faq(question, user):
+    """Simple role-aware lexical retrieval; no external ML service required."""
+    records = load_copilot_qa()
+    if not records:
+        return None
+
+    role = str(user.get("role", "User")).strip().lower()
+    role_aliases = {
+        "department / hod": {"department admin", "faculty", "any authorized role", "any", "all roles"},
+        "placement cell": {"department admin", "college admin", "any authorized role", "any", "all roles"},
+        "college admin": {"college admin", "any authorized role", "any", "all roles"},
+        "student": {"student", "any authorized role", "any", "all roles"},
+        "faculty": {"faculty", "any authorized role", "any", "all roles"},
+    }
+    allowed = role_aliases.get(role, {role, "any authorized role", "any", "all roles"})
+    allowed = {x.lower() for x in allowed} | {role}
+
+    def tokens(text):
+        return {t for t in "".join(ch.lower() if ch.isalnum() else " " for ch in text).split() if len(t) > 1}
+
+    q_tokens = tokens(question)
+    if not q_tokens:
+        return None
+
+    best_record, best_score = None, 0.0
+    for record in records:
+        if record["role"].lower() not in allowed:
+            continue
+        r_tokens = tokens(record["question"])
+        if not r_tokens:
+            continue
+        overlap = len(q_tokens & r_tokens)
+        score = overlap / max(1, len(q_tokens | r_tokens))
+        # Give a small preference to matching multiword phrases.
+        if question.strip().lower() == record["question"].strip().lower():
+            score = 1.0
+        if score > best_score:
+            best_record, best_score = record, score
+
+    return best_record["answer"] if best_record and best_score >= 0.12 else None
+
+
 def copilot_reply(question, user, academic_df=None, placement_df=None):
     """Safe prototype assistant: answers common DEPTHIVE questions from available workspace data.
     Replace this retrieval/rule layer with a validated ML/LLM service for broader natural-language coverage.
@@ -575,7 +491,11 @@ def copilot_reply(question, user, academic_df=None, placement_df=None):
         return "Use Academic Data Hub for the academic roster and Placement & Internship Data for official placement outcomes. Both support drag-and-drop CSV/Excel uploads, previews and templates. Student documents are uploaded separately in My Documents."
     if any(k in q for k in ["scorecard", "score card", "chart", "report"]):
         return "Open Overview for role-specific metrics, and the relevant analysis workspace for charts and detailed scorecards. The summary uses available uploaded records only; missing data is not treated as poor performance."
-    return "I can currently answer common questions about DEPTHIVE navigation, approvals, academic risk, department comparisons, uploads and placement summaries. This prototype does not yet have a trained ML model or unrestricted natural-language reasoning. A trained model should be added only after curating and evaluating a safe, role-aware question/answer dataset."
+    # If no live-data/rule response matched, retrieve a reviewed role-aware FAQ answer.
+    faq_answer = retrieve_copilot_faq(question, user)
+    if faq_answer:
+        return faq_answer
+    return "I can currently answer common questions about DEPTHIVE navigation, approvals, academic risk, department comparisons, uploads and placement summaries. The reviewed Q&A dataset provides starter guidance, but this prototype is not a trained ML model and does not have unrestricted natural-language reasoning. If your question needs live data, open the relevant workspace module."
 
 def can_access(user, roles): return user.get("role") in roles and bool(user.get("approved", 0))
 
@@ -629,19 +549,8 @@ if not user:
                 name = st.text_input("Full name", placeholder="Your full name")
                 email = st.text_input("Email address", placeholder="you@college.edu", autocomplete="email")
                 role = st.selectbox("Account type", ["Student", "Faculty", "Department / HOD", "Placement Cell", "College Admin"])
-                branches = ["CSE", "DS", "IOT", "Cyber Security", "AIML", "AI", "IT", "AIDS"]
-                # College Admin does not need a branch or academic year.
-                if role == "College Admin":
-                    dept = ""
-                else:
-                    dept = st.selectbox(
-                        "Department / Branch",
-                        branches,
-                        index=None,
-                        placeholder="Choose your branch",
-                        help="Select your branch from the list. Branch labels are stored in a consistent format."
-                    )
-                year = st.selectbox("Current year", [1, 2, 3, 4], index=None, placeholder="Select your year") if role == "Student" else 0
+                dept = st.text_input("Department / Branch", placeholder="e.g. CSE-DS", help="Required for department staff so records can be scoped to the right department.")
+                year = st.selectbox("Current year (students only)", [1,2,3,4], index=2) if role == "Student" else 0
                 if role == "Student":
                     st.info("Student accounts are activated immediately. Sign in with the email and password you create.")
                 elif role == "College Admin":
@@ -652,11 +561,10 @@ if not user:
                 confirm = st.text_input("Confirm password", type="password", placeholder="Re-enter password", autocomplete="new-password")
                 submit = st.form_submit_button("Create account →", width="stretch")
             if submit:
-                needs_department = role in ["Student", "Faculty", "Department / HOD", "Placement Cell"]
-                needs_year = role == "Student"
+                needs_department = role in ["Faculty", "Department / HOD", "Placement Cell"]
                 if (not name.strip() or "@" not in email or len(password) < 10 or password != confirm
-                        or (needs_department and not dept) or (needs_year and not year)):
-                    st.error("Enter your name and a valid email, use at least 10 characters for the password, ensure both passwords match, and select the required branch/year.")
+                        or (needs_department and not dept.strip())):
+                    st.error("Enter your name and a valid email, use at least 10 characters for the password, ensure both passwords match, and provide a department for staff roles.")
                 else:
                     ok, msg = register_user(name, email, password, role, dept, year)
                     if ok:
@@ -819,16 +727,7 @@ elif page == "My Profile & Progress":
         c1,c2 = st.columns(2)
         with c1:
             student_id = st.text_input("Student ID / Enrollment number", value=profile.get("student_id") or "")
-            branches = ["CSE", "DS", "IOT", "Cyber Security", "AIML", "AI", "IT", "AIDS"]
-            current_dept = (profile.get("department") or user.get("department") or "").strip()
-            # Match existing saved values without treating letter case as significant.
-            branch_index = next((i for i, branch in enumerate(branches) if branch.casefold() == current_dept.casefold()), None)
-            dept = st.selectbox(
-                "Department / Branch",
-                branches,
-                index=branch_index,
-                placeholder="Choose your branch"
-            )
+            dept = st.text_input("Department / Branch", value=profile.get("department") or user.get("department") or "")
             year = st.selectbox("Academic year", [1,2,3,4], index=max(0, min(3, int(profile.get("academic_year") or user.get("academic_year") or 1)-1)))
             semester = st.selectbox("Current semester", ["1","2","3","4","5","6","7","8"], index=0 if not profile.get("semester") else int(profile["semester"])-1)
         with c2:
@@ -839,9 +738,9 @@ elif page == "My Profile & Progress":
         career_goal = st.text_area("Career goals / areas to improve", value=profile.get("career_goal") or "")
         save = st.form_submit_button("Save profile", width="stretch")
     if save:
-        if not student_id.strip() or not dept: st.error("Student ID and branch are required.")
+        if not student_id.strip() or not dept.strip(): st.error("Student ID and department are required.")
         else:
-            save_profile(user["id"], {"student_id":student_id.strip(),"department":dept,"academic_year":year,"semester":semester,"cgpa":cgpa if cgpa else None,"attendance":attendance if attendance else None,"skills":skills,"projects":projects,"career_goal":career_goal})
+            save_profile(user["id"], {"student_id":student_id.strip(),"department":dept.strip(),"academic_year":year,"semester":semester,"cgpa":cgpa if cgpa else None,"attendance":attendance if attendance else None,"skills":skills,"projects":projects,"career_goal":career_goal})
             log_action(user["id"], "PROFILE_UPDATE", f"Student profile updated: {student_id}")
             st.success("Profile saved.")
     st.caption("Profile values are student-submitted. Official college records should be verified separately before institutional reporting.")
@@ -1275,29 +1174,7 @@ elif page == "Student Risk Review":
         view=ra[ra["Risk Level"].isin(filt)].sort_values("Risk Score",ascending=False)
         st.dataframe(view, width="stretch", hide_index=True)
         st.download_button("Download risk review CSV", view.to_csv(index=False).encode("utf-8"), "depthive_student_risk_review.csv", "text/csv")
-
-        st.markdown("### Future risk prediction (ML)")
-        st.caption("The model trains only when the uploaded roster contains real historical outcome labels. It will not fabricate future outcomes from current risk scores.")
-        model_df, model_accuracy, model_message = train_future_risk_model(combined_analysis_roster())
-        if model_df is None:
-            st.info(model_message)
-        else:
-            st.warning(model_message + " Do not use this alone for academic decisions; check data quality, fairness and performance over time.")
-            ml_cols = [c for c in ["student_id", "student_name", "department", "year", "cgpa", "attendance", "backlogs", "ML Predicted Outcome", "Model Confidence %", "ML Prediction"] if c in model_df.columns]
-            st.dataframe(model_df[ml_cols], width="stretch", hide_index=True)
-            st.download_button("Download ML predictions CSV", model_df[ml_cols].to_csv(index=False).encode("utf-8"), "depthive_future_risk_predictions.csv", "text/csv")
-
-        st.markdown("### Recommended actions & impact simulator")
-        st.write("Select a what-if scenario to estimate how risk scores could change if attendance improved by 10 percentage points, CGPA increased by 0.3, and one backlog was cleared. These are scenario calculations—not proven causal effects or trained impact predictions.")
-        impact_df, impact_summary = simulate_action_impact(combined_analysis_roster())
-        if not impact_df.empty:
-            m1, m2, m3 = st.columns(3)
-            m1.metric("Students simulated", impact_summary["students"])
-            m2.metric("Scores reduced in scenario", impact_summary["improved"])
-            m3.metric("Average score reduction", f"{impact_summary['avg_reduction']} points")
-            st.dataframe(impact_df.sort_values("Current Risk Score", ascending=False), width="stretch", hide_index=True)
-            st.download_button("Download action impact scenario CSV", impact_df.to_csv(index=False).encode("utf-8"), "depthive_action_impact_scenario.csv", "text/csv")
-        st.caption("Risk thresholds and simulated outcomes are decision-support signals only. Validate data with faculty and do not treat them as guaranteed outcomes.")
+        st.caption("Rules are transparent starter thresholds, not a clinically or statistically validated prediction model. Confirm records before taking action.")
 
 elif page == "Department Intelligence":
     hero("DEPARTMENT ANALYTICS", "Department health & comparison", "Compare academic health separately from placement outcomes. The system does not blend unrelated years or treat missing data as poor performance.")
@@ -1472,20 +1349,36 @@ elif page == "Access Approvals":
     else: st.info("No approvals have been recorded yet. Future approvals will appear here.")
 
 elif page == "DEPTHIVE Copilot":
-    hero("ROLE-AWARE ASSISTANT", "DEPTHIVE Copilot", "Ask about the data and tools available in your current workspace. Responses respect the current role and clearly distinguish measured data from recommendations.")
-    st.info("Copilot is currently a safe prototype assistant using configured rules and current workspace data. It is not yet a trained ML model and cannot reliably answer every possible question.")
-    prompt=st.text_area("Ask DEPTHIVE Copilot", placeholder="Examples: How many students are high risk? Which department has the highest CGPA? How do I upload placement data?", height=110, key="copilot_question")
+    hero("ROLE-AWARE ASSISTANT", "DEPTHIVE Copilot", "Ask about DEPTHIVE features or the data available in your current workspace. Responses respect your role and distinguish measured data from guidance.")
+    faq_count = len(load_copilot_qa())
+    if faq_count:
+        st.success(f"Reviewed Q&A guidance is connected ({faq_count} examples). Live-data questions are answered from the current workspace rules/data where available.")
+    else:
+        st.warning("Reviewed Q&A dataset was not found. Place depthive_copilot_qa_reviewed.jsonl in the project's data folder.")
+    st.caption("This is a role-aware retrieval prototype, not a trained ML model. Live data is only available where the current workspace has a supported data source.")
+
+    prompt = st.text_area(
+        "Ask DEPTHIVE Copilot",
+        placeholder="Examples: How do I upload a marksheet? How many students are high risk? Where can I view placement summaries?",
+        height=110,
+        key="copilot_question"
+    )
     if st.button("Ask Copilot", width="stretch"):
-        answer=copilot_reply(prompt,user,academic_df,placement_df)
-        st.session_state["copilot_last_question"]=prompt
-        st.session_state["copilot_last_answer"]=answer
-        log_action(user["id"],"COPILOT_QUERY",prompt[:300])
+        if not prompt.strip():
+            st.warning("Please enter a question first.")
+        else:
+            answer = copilot_reply(prompt, user, academic_df, placement_df)
+            st.session_state["copilot_last_question"] = prompt.strip()
+            st.session_state["copilot_last_answer"] = answer
+            log_action(user["id"], "COPILOT_QUERY", prompt[:300])
+
     if st.session_state.get("copilot_last_answer"):
         st.markdown("### Copilot response")
         st.info(st.session_state["copilot_last_answer"])
-        st.caption("Check important conclusions against the source records. The assistant only has access to the current prototype workspace context.")
-    st.markdown("### Planned ML upgrade")
-    st.write("A future ML version should use a curated, reviewed question/answer dataset and retrieval from approved college records. It needs role-based access checks, evaluation for correctness, and a fallback when evidence is missing. It should not be trained on private student records without authorization.")
+        st.caption("Verify important conclusions against source records. The assistant only uses information available to the current role and prototype workspace.")
+
+    with st.expander("About this Copilot prototype"):
+        st.write("The reviewed Q&A dataset provides role-aware guidance for common DEPTHIVE questions. Existing rule-based handlers remain responsible for supported live-data summaries such as academic risk, department comparisons, approvals and placement metrics. Unsupported questions receive a cautious fallback.")
 
 st.markdown("---")
 st.caption("DEPTHIVE · Prototype. Rule-based risk scores are indicators for review, not guaranteed predictions. Restrict access to personal data and validate uploaded records before institutional decisions.")
